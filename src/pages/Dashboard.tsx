@@ -11,13 +11,15 @@ import {
   Users, 
   Briefcase,
   Plus,
-  LayoutDashboard
+  LayoutDashboard,
+  ArrowRight
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { TaskDialog } from '@/components/tasks/TaskDialog';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 const Dashboard = () => {
   const { tasks, teamMembers, projects } = useApp();
@@ -142,10 +144,12 @@ const Dashboard = () => {
                 variant="outline" 
                 size="sm" 
                 className="w-full" 
-                onClick={() => window.location.href = '/team'}
+                asChild
               >
-                <Users className="h-4 w-4 mr-2" />
-                View Team
+                <Link to="/team">
+                  <Users className="h-4 w-4 mr-2" />
+                  View Team
+                </Link>
               </Button>
             </div>
           </CardContent>
@@ -162,7 +166,7 @@ const Dashboard = () => {
             </div>
             <div className="mt-4 space-y-3">
               {projects.slice(0, 2).map(project => (
-                <div key={project.id} className="flex items-center justify-between">
+                <Link to={`/project/${project.id}`} key={project.id} className="flex items-center justify-between hover:bg-secondary/50 p-1 rounded transition-colors">
                   <div className="flex items-center">
                     <div className="w-2 h-2 rounded-full bg-primary mr-2"></div>
                     <span className="text-sm truncate max-w-[150px]">{project.name}</span>
@@ -170,15 +174,23 @@ const Dashboard = () => {
                   <span className="text-xs text-muted-foreground">
                     {project.tasks.length} tasks
                   </span>
-                </div>
+                </Link>
               ))}
+              {projects.length > 2 && (
+                <div className="text-xs text-muted-foreground text-center">
+                  + {projects.length - 2} more projects
+                </div>
+              )}
               <Button 
                 variant="outline" 
                 size="sm" 
                 className="w-full" 
+                asChild
               >
-                <Briefcase className="h-4 w-4 mr-2" />
-                View Projects
+                <Link to="/projects">
+                  <Briefcase className="h-4 w-4 mr-2" />
+                  View Projects
+                </Link>
               </Button>
             </div>
           </CardContent>

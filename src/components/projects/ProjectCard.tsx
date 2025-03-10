@@ -9,7 +9,13 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, CheckSquare, Users } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { 
+  MoreHorizontal, 
+  CheckSquare, 
+  Users, 
+  ArrowRight
+} from 'lucide-react';
 import { AvatarGroup } from '@/components/ui/avatar-group';
 
 interface ProjectCardProps {
@@ -108,6 +114,15 @@ export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
             </div>
           </div>
         )}
+        
+        <div className="mt-4 pt-4 border-t border-border/50">
+          <Button asChild variant="ghost" className="w-full justify-between">
+            <Link to={`/project/${project.id}`}>
+              <span>View Details</span>
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

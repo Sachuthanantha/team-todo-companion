@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Task, TaskPriority, TaskStatus, useApp } from '@/context/AppContext';
 import {
@@ -40,6 +41,7 @@ const formSchema = z.object({
   status: z.enum(['todo', 'inProcess', 'completed']),
   priority: z.enum(['low', 'medium', 'high']),
   assignedTo: z.array(z.string()),
+  projectId: z.string().optional(),
   dueDate: z.date().optional(),
 });
 
@@ -52,8 +54,9 @@ interface TaskDialogProps {
 }
 
 export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps) => {
-  const { addTask, updateTask, teamMembers } = useApp();
+  const { addTask, updateTask, teamMembers, projects, updateProject } = useApp();
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
   
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -63,6 +66,7 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
       status: 'todo' as TaskStatus,
       priority: 'medium' as TaskPriority,
       assignedTo: [],
+      projectId: undefined,
       dueDate: undefined,
     },
   });
@@ -71,15 +75,20 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
   useEffect(() => {
     if (open) {
       if (initialTask) {
+        // Find which project this task belongs to
+        const projectWithTask = projects.find(p => p.tasks.includes(initialTask.id));
+        
         form.reset({
           title: initialTask.title,
           description: initialTask.description,
           status: initialTask.status,
           priority: initialTask.priority,
           assignedTo: initialTask.assignedTo,
+          projectId: projectWithTask?.id,
           dueDate: initialTask.dueDate ? new Date(initialTask.dueDate) : undefined,
         });
         setSelectedTeamMembers(initialTask.assignedTo);
+        setSelectedProjectId(projectWithTask?.id);
       } else {
         form.reset({
           title: '',
@@ -87,15 +96,29 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
           status: 'todo',
           priority: 'medium',
           assignedTo: [],
+          projectId: undefined,
           dueDate: undefined,
         });
         setSelectedTeamMembers([]);
+        setSelectedProjectId(undefined);
       }
     }
-  }, [open, initialTask, form]);
+  }, [open, initialTask, form, projects]);
 
   const onSubmit = (values: FormValues) => {
+    // Handle task creation or update
     if (initialTask) {
+      // Before updating the task, remove it from any project it was in
+      const oldProjectWithTask = projects.find(p => p.tasks.includes(initialTask.id));
+      if (oldProjectWithTask && oldProjectWithTask.id !== values.projectId) {
+        const updatedTasks = oldProjectWithTask.tasks.filter(id => id !== initialTask.id);
+        updateProject({
+          ...oldProjectWithTask,
+          tasks: updatedTasks
+        });
+      }
+      
+      // Update task
       updateTask({
         ...initialTask,
         title: values.title,
@@ -105,8 +128,20 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
         assignedTo: selectedTeamMembers,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       });
+      
+      // Add task to new project if selected
+      if (values.projectId && (!oldProjectWithTask || oldProjectWithTask.id !== values.projectId)) {
+        const projectToUpdate = projects.find(p => p.id === values.projectId);
+        if (projectToUpdate && !projectToUpdate.tasks.includes(initialTask.id)) {
+          updateProject({
+            ...projectToUpdate,
+            tasks: [...projectToUpdate.tasks, initialTask.id]
+          });
+        }
+      }
     } else {
-      addTask({
+      // Create new task
+      const newTask = addTask({
         title: values.title,
         description: values.description,
         status: values.status,
@@ -114,6 +149,17 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
         assignedTo: selectedTeamMembers,
         dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       });
+      
+      // Add task to project if selected
+      if (values.projectId && newTask) {
+        const projectToUpdate = projects.find(p => p.id === values.projectId);
+        if (projectToUpdate) {
+          updateProject({
+            ...projectToUpdate,
+            tasks: [...projectToUpdate.tasks, newTask.id]
+          });
+        }
+      }
     }
     onOpenChange(false);
   };
@@ -222,6 +268,39 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
                 )}
               />
             </div>
+            
+            {/* Project selection field */}
+            <FormField
+              control={form.control}
+              name="projectId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project</FormLabel>
+                  <Select 
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedProjectId(value);
+                    }}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select project (optional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">No Project</SelectItem>
+                      {projects.map((project) => (
+                        <SelectItem key={project.id} value={project.id}>
+                          {project.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}

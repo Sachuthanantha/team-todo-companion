@@ -43,7 +43,7 @@ interface AppContextType {
   
   // Tasks
   tasks: Task[];
-  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => Task;
   updateTask: (task: Task) => void;
   deleteTask: (id: string) => void;
   getTasksByStatus: (status: TaskStatus) => Task[];
@@ -193,6 +193,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     };
     setTasks(prev => [...prev, newTask]);
     showSuccessToast('Task added successfully');
+    return newTask;
   };
   
   const updateTask = (task: Task) => {
