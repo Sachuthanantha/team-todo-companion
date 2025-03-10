@@ -98,12 +98,8 @@ export function MultiSelect({
         </div>
       </div>
       <div className="relative">
-        <CommandPrimitive
-          open={open}
-          onOpenChange={setOpen}
-          className="absolute top-0 w-full z-10"
-        >
-          <Command>
+        {open && (
+          <Command className="absolute top-0 w-full z-10">
             <CommandGroup className="max-h-[200px] overflow-auto">
               {displayOptions.length > 0 ? (
                 displayOptions.map((option) => {
@@ -138,7 +134,7 @@ export function MultiSelect({
               )}
             </CommandGroup>
           </Command>
-        </CommandPrimitive>
+        )}
       </div>
     </div>
   );
