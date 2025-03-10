@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme/theme-provider";
 import { AppLayout } from "./components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
+import Projects from "./pages/Projects";
 import Team from "./pages/Team";
 import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/" element={<AppLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="tasks" element={<Tasks />} />
+              <Route path="projects" element={<Projects />} />
               <Route path="team" element={<Team />} />
               <Route path="calendar" element={<Calendar />} />
               <Route path="settings" element={<Settings />} />

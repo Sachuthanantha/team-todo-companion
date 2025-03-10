@@ -10,7 +10,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   Menu,
-  X
+  X,
+  Briefcase
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -117,6 +118,13 @@ export function Sidebar() {
             to="/tasks"
             icon={<CheckSquare size={isCollapsed ? 20 : 18} />}
             label="Tasks"
+            isCollapsed={isCollapsed}
+            onClick={closeMobileSidebar}
+          />
+          <NavItem
+            to="/projects"
+            icon={<Briefcase size={isCollapsed ? 20 : 18} />}
+            label="Projects"
             isCollapsed={isCollapsed}
             onClick={closeMobileSidebar}
           />
