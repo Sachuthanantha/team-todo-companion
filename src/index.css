@@ -108,7 +108,7 @@
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
 
-.glass-dark {
+.dark .glass {
   background: rgba(15, 23, 42, 0.75);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -187,8 +187,8 @@ select:focus {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -196,10 +196,41 @@ select:focus {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(180, 180, 180, 0.5);
-  border-radius: 10px;
+  @apply bg-muted-foreground/20 rounded-full;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(150, 150, 150, 0.6);
+  @apply bg-muted-foreground/30;
+}
+
+/* Dark mode and responsive improvements */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+}
+
+/* Mobile optimized tap targets */
+@media (max-width: 640px) {
+  button, 
+  .btn, 
+  a {
+    @apply min-h-9;
+  }
+}
+
+/* Media query for small screens */
+@media (max-width: 480px) {
+  h1 {
+    @apply text-xl;
+  }
+  
+  h2 {
+    @apply text-lg;
+  }
+  
+  .card-title {
+    @apply text-base;
+  }
 }

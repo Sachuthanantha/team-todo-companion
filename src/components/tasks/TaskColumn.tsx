@@ -26,11 +26,11 @@ export const TaskColumn = ({
   const tasks = getTasksByStatus(status);
 
   return (
-    <Card className="flex flex-col h-[calc(100vh-16rem)] overflow-hidden">
-      <CardHeader className="pb-2 pt-5">
-        <CardTitle className="flex justify-between items-center text-base">
+    <Card className="flex flex-col h-[calc(100vh-16rem)] md:h-[calc(100vh-18rem)] overflow-hidden border border-border dark:border-border/20">
+      <CardHeader className="pb-2 pt-4 sm:pt-5">
+        <CardTitle className="flex justify-between items-center text-sm sm:text-base">
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 flex items-center justify-center">
+            <div className="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center">
               {icon}
             </div>
             <span>{title}</span>
@@ -50,9 +50,9 @@ export const TaskColumn = ({
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="flex-1 overflow-y-auto pb-6 pt-0 px-3">
+      <CardContent className="flex-1 overflow-y-auto pb-6 pt-0 px-2 sm:px-3">
         {tasks.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {tasks.map((task) => (
               <TaskCard key={task.id} task={task} onEdit={onEditTask} />
             ))}
@@ -60,7 +60,7 @@ export const TaskColumn = ({
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-4 text-center">
             <div className="mb-2">{icon}</div>
-            <p>{emptyMessage}</p>
+            <p className="text-sm">{emptyMessage}</p>
           </div>
         )}
       </CardContent>

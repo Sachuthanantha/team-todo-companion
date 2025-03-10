@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 interface NavItemProps {
   to: string;
@@ -77,7 +78,7 @@ export function Sidebar() {
 
   const sidebarContent = (
     <>
-      <div className="px-3 py-4">
+      <div className="px-3 py-4 flex flex-col h-full">
         <div className="flex items-center justify-between mb-8">
           {!isCollapsed && (
             <div className="flex items-center">
@@ -141,6 +142,10 @@ export function Sidebar() {
             onClick={closeMobileSidebar}
           />
         </div>
+        
+        <div className="mt-auto pt-4">
+          <ThemeToggle className={isCollapsed ? "mx-auto" : ""} />
+        </div>
       </div>
     </>
   );
@@ -152,14 +157,14 @@ export function Sidebar() {
         <MobileMenuButton />
         <div
           className={cn(
-            "fixed inset-0 bg-black/50 z-40 transition-opacity duration-300",
+            "fixed inset-0 bg-black/50 dark:bg-black/70 z-40 transition-opacity duration-300",
             isMobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           )}
           onClick={() => setIsMobileOpen(false)}
         />
         <aside
           className={cn(
-            "fixed top-0 left-0 h-full w-64 bg-sidebar z-50 shadow-xl transition-transform duration-300 ease-in-expo animate-slide-in-right",
+            "fixed top-0 left-0 h-full w-64 bg-sidebar dark:bg-sidebar z-50 shadow-xl transition-transform duration-300 ease-in-expo animate-slide-in-right",
             isMobileOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
@@ -173,7 +178,7 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "h-screen bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-expo",
+        "h-screen bg-sidebar dark:bg-sidebar border-r border-sidebar-border dark:border-sidebar-border/20 transition-all duration-300 ease-in-expo",
         isCollapsed ? "w-16" : "w-64"
       )}
     >

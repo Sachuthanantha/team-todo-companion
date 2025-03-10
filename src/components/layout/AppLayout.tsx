@@ -8,8 +8,8 @@ export const AppLayout = () => {
     <AppProvider>
       <div className="flex h-screen w-full overflow-hidden">
         <Sidebar />
-        <main className="flex-1 overflow-auto bg-background">
-          <div className="container mx-auto p-4 md:p-6 animate-fade-in">
+        <main className="flex-1 overflow-auto bg-background dark:bg-background">
+          <div className="container mx-auto p-3 sm:p-4 md:p-6 animate-fade-in">
             <Outlet />
           </div>
         </main>
