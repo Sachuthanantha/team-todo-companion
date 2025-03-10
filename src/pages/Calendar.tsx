@@ -8,6 +8,7 @@ import { format } from 'date-fns';
 import { CalendarClock, Clock, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { DayContentProps } from 'react-day-picker';
 
 const Calendar = () => {
   const { tasks } = useApp();
@@ -51,8 +52,8 @@ const Calendar = () => {
   };
 
   // Render custom day content for the calendar
-  const renderDay = (day: Date) => {
-    const dateStr = format(day, 'yyyy-MM-dd');
+  const renderDay = (date: Date) => {
+    const dateStr = format(date, 'yyyy-MM-dd');
     const dayTasks = tasksByDate[dateStr] || [];
     
     if (dayTasks.length === 0) return null;
@@ -103,12 +104,12 @@ const Calendar = () => {
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                className="rounded-md border"
+                className="rounded-md border pointer-events-auto"
                 components={{
-                  DayContent: (props) => (
+                  DayContent: ({ date }: DayContentProps) => (
                     <>
-                      {props.day.getDate()}
-                      {renderDay(props.day)}
+                      {date.getDate()}
+                      {renderDay(date)}
                     </>
                   ),
                 }}

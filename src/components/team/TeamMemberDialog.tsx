@@ -1,4 +1,3 @@
-
 import { useEffect } from 'react';
 import { TeamMember, useApp } from '@/context/AppContext';
 import {
@@ -61,7 +60,7 @@ export const TeamMemberDialog = ({
         name: initialMember.name,
         role: initialMember.role,
         email: initialMember.email,
-        avatar: initialMember.avatar,
+        avatar: initialMember.avatar || '',
       });
     } else if (open) {
       form.reset({
@@ -80,7 +79,12 @@ export const TeamMemberDialog = ({
         ...values,
       });
     } else {
-      addTeamMember(values);
+      addTeamMember({
+        name: values.name,
+        role: values.role,
+        email: values.email,
+        avatar: values.avatar,
+      });
     }
     onOpenChange(false);
   };

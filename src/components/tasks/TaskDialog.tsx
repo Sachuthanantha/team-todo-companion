@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Task, TaskPriority, TaskStatus, useApp } from '@/context/AppContext';
 import {
@@ -99,13 +98,21 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
     if (initialTask) {
       updateTask({
         ...initialTask,
-        ...values,
+        title: values.title,
+        description: values.description,
+        status: values.status,
+        priority: values.priority,
         assignedTo: selectedTeamMembers,
+        dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       });
     } else {
       addTask({
-        ...values,
+        title: values.title,
+        description: values.description,
+        status: values.status,
+        priority: values.priority,
         assignedTo: selectedTeamMembers,
+        dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
       });
     }
     onOpenChange(false);
@@ -247,6 +254,7 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
                         selected={field.value}
                         onSelect={field.onChange}
                         initialFocus
+                        className="pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
