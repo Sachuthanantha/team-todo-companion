@@ -7,6 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -185,6 +186,9 @@ export const TaskDialog = ({
           <DialogTitle>
             {initialTask ? 'Edit Task' : 'Add New Task'}
           </DialogTitle>
+          <DialogDescription>
+            {initialTask ? 'Update task details' : 'Create a new task and assign it to a project'}
+          </DialogDescription>
         </DialogHeader>
         
         <Form {...form}>
@@ -289,7 +293,7 @@ export const TaskDialog = ({
                       field.onChange(value);
                       setSelectedProjectId(value);
                     }}
-                    value={field.value || ""}
+                    value={field.value || "none"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -297,7 +301,7 @@ export const TaskDialog = ({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No Project</SelectItem>
+                      <SelectItem value="none">No Project</SelectItem>
                       {projects.map((project) => (
                         <SelectItem key={project.id} value={project.id}>
                           {project.name}
