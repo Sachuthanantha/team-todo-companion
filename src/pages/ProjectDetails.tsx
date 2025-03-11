@@ -11,13 +11,15 @@ import {
   Plus, 
   Pencil,
   MoreHorizontal,
-  Trash2 
+  Trash2,
+  Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { TaskDialog } from '@/components/tasks/TaskDialog';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -43,11 +45,13 @@ const ProjectDetails = () => {
   
   const [project, setProject] = useState<Project | null>(null);
   const [projectTasks, setProjectTasks] = useState<Task[]>([]);
+  const [filteredTasks, setFilteredTasks] = useState<Task[]>([]);
   const [teamMembersOnProject, setTeamMembersOnProject] = useState<TeamMember[]>([]);
   const [taskDialogOpen, setTaskDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   
   useEffect(() => {
     if (projectId) {
@@ -68,6 +72,19 @@ const ProjectDetails = () => {
       }
     }
   }, [projectId, projects, tasks, getTeamMembersByIds]);
+  
+  // Filter tasks based on search term
+  useEffect(() => {
+    if (projectTasks.length > 0) {
+      const filtered = projectTasks.filter(task => 
+        task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        task.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredTasks(filtered);
+    } else {
+      setFilteredTasks([]);
+    }
+  }, [projectTasks, searchTerm]);
   
   const handleAddTask = () => {
     setSelectedTask(null);
@@ -91,9 +108,9 @@ const ProjectDetails = () => {
   };
 
   // Calculate task statistics
-  const todoTasks = projectTasks.filter(task => task.status === 'todo');
-  const inProgressTasks = projectTasks.filter(task => task.status === 'inProcess');
-  const completedTasks = projectTasks.filter(task => task.status === 'completed');
+  const todoTasks = filteredTasks.filter(task => task.status === 'todo');
+  const inProgressTasks = filteredTasks.filter(task => task.status === 'inProcess');
+  const completedTasks = filteredTasks.filter(task => task.status === 'completed');
   const completionPercentage = projectTasks.length > 0 
     ? Math.round((completedTasks.length / projectTasks.length) * 100) 
     : 0;
@@ -206,15 +223,15 @@ const ProjectDetails = () => {
           <CardContent className="py-0 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm">To Do</span>
-              <Badge variant="outline">{todoTasks.length}</Badge>
+              <Badge variant="outline">{projectTasks.filter(task => task.status === 'todo').length}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">In Progress</span>
-              <Badge variant="outline">{inProgressTasks.length}</Badge>
+              <Badge variant="outline">{projectTasks.filter(task => task.status === 'inProcess').length}</Badge>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm">Completed</span>
-              <Badge variant="outline">{completedTasks.length}</Badge>
+              <Badge variant="outline">{projectTasks.filter(task => task.status === 'completed').length}</Badge>
             </div>
           </CardContent>
         </Card>
@@ -248,40 +265,66 @@ const ProjectDetails = () => {
       
       {/* Tasks */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <h2 className="text-xl font-semibold flex items-center">
             <CheckSquare className="h-5 w-5 mr-2 text-primary" />
             Tasks
           </h2>
-          <Button onClick={handleAddTask}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Task
-          </Button>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search tasks..."
+                className="w-full pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            <Button onClick={handleAddTask}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Task
+            </Button>
+          </div>
         </div>
         
         <Tabs defaultValue="all" className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="all">All Tasks ({projectTasks.length})</TabsTrigger>
+            <TabsTrigger value="all">All Tasks ({filteredTasks.length})</TabsTrigger>
             <TabsTrigger value="todo">To Do ({todoTasks.length})</TabsTrigger>
             <TabsTrigger value="inProcess">In Progress ({inProgressTasks.length})</TabsTrigger>
             <TabsTrigger value="completed">Completed ({completedTasks.length})</TabsTrigger>
           </TabsList>
           
           <TabsContent value="all">
-            {projectTasks.length > 0 ? (
+            {filteredTasks.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {projectTasks.map(task => (
+                {filteredTasks.map(task => (
                   <TaskCard key={task.id} task={task} onEdit={handleEditTask} />
                 ))}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 bg-secondary/50 rounded-lg">
-                <CheckSquare className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-                <p className="text-muted-foreground mb-4">No tasks in this project yet</p>
-                <Button onClick={handleAddTask}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add First Task
-                </Button>
+                {searchTerm ? (
+                  <>
+                    <CheckSquare className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                    <p className="text-muted-foreground mb-4">No tasks found matching "{searchTerm}"</p>
+                    <Button onClick={() => setSearchTerm('')}>
+                      Clear Search
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <CheckSquare className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                    <p className="text-muted-foreground mb-4">No tasks in this project yet</p>
+                    <Button onClick={handleAddTask}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add First Task
+                    </Button>
+                  </>
+                )}
               </div>
             )}
           </TabsContent>
@@ -335,6 +378,7 @@ const ProjectDetails = () => {
         open={taskDialogOpen}
         onOpenChange={setTaskDialogOpen}
         initialTask={selectedTask}
+        defaultProjectId={project.id}
       />
       
       {/* Edit Project Dialog */}

@@ -51,9 +51,15 @@ interface TaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialTask?: Task | null;
+  defaultProjectId?: string;
 }
 
-export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps) => {
+export const TaskDialog = ({ 
+  open, 
+  onOpenChange, 
+  initialTask, 
+  defaultProjectId 
+}: TaskDialogProps) => {
   const { addTask, updateTask, teamMembers, projects, updateProject } = useApp();
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
@@ -96,14 +102,14 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
           status: 'todo',
           priority: 'medium',
           assignedTo: [],
-          projectId: undefined,
+          projectId: defaultProjectId,
           dueDate: undefined,
         });
         setSelectedTeamMembers([]);
-        setSelectedProjectId(undefined);
+        setSelectedProjectId(defaultProjectId);
       }
     }
-  }, [open, initialTask, form, projects]);
+  }, [open, initialTask, form, projects, defaultProjectId]);
 
   const onSubmit = (values: FormValues) => {
     // Handle task creation or update
@@ -225,6 +231,7 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -251,6 +258,7 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
                     <Select 
                       onValueChange={field.onChange} 
                       defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -281,7 +289,7 @@ export const TaskDialog = ({ open, onOpenChange, initialTask }: TaskDialogProps)
                       field.onChange(value);
                       setSelectedProjectId(value);
                     }}
-                    value={field.value}
+                    value={field.value || ""}
                   >
                     <FormControl>
                       <SelectTrigger>

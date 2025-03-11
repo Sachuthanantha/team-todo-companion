@@ -22,8 +22,8 @@ export const TaskColumn = ({
   onAddTask,
   onEditTask,
 }: TaskColumnProps) => {
-  const { getTasksByStatus } = useApp();
-  const tasks = getTasksByStatus(status);
+  const { tasks } = useApp();
+  const columnTasks = tasks.filter(task => task.status === status);
 
   return (
     <Card className="flex flex-col h-[calc(100vh-16rem)] md:h-[calc(100vh-18rem)] overflow-hidden border border-border dark:border-border/20">
@@ -35,7 +35,7 @@ export const TaskColumn = ({
             </div>
             <span>{title}</span>
             <div className="flex items-center justify-center w-5 h-5 rounded-full bg-accent text-accent-foreground text-xs">
-              {tasks.length}
+              {columnTasks.length}
             </div>
           </div>
           <Button 
@@ -51,9 +51,9 @@ export const TaskColumn = ({
       </CardHeader>
       
       <CardContent className="flex-1 overflow-y-auto pb-6 pt-0 px-2 sm:px-3">
-        {tasks.length > 0 ? (
+        {columnTasks.length > 0 ? (
           <div className="space-y-2 sm:space-y-3">
-            {tasks.map((task) => (
+            {columnTasks.map((task) => (
               <TaskCard key={task.id} task={task} onEdit={onEditTask} />
             ))}
           </div>

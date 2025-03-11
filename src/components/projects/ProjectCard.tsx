@@ -14,9 +14,12 @@ import {
   MoreHorizontal, 
   CheckSquare, 
   Users, 
-  ArrowRight
+  ArrowRight,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 import { AvatarGroup } from '@/components/ui/avatar-group';
+import { Badge } from '@/components/ui/badge';
 
 interface ProjectCardProps {
   project: Project;
@@ -35,11 +38,18 @@ export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
   );
   const teamMembers = getTeamMembersByIds(uniqueTeamMemberIds);
   
+  // Calculate task statistics
+  const todoTasks = projectTasks.filter(task => task.status === 'todo');
+  const inProgressTasks = projectTasks.filter(task => task.status === 'inProcess');
+  const completedTasks = projectTasks.filter(task => task.status === 'completed');
+  
   // Calculate completion percentage
-  const completedTasks = projectTasks.filter(t => t.status === 'completed').length;
   const completionPercentage = projectTasks.length > 0 
-    ? Math.round((completedTasks / projectTasks.length) * 100) 
+    ? Math.round((completedTasks.length / projectTasks.length) * 100) 
     : 0;
+
+  // Get tasks with high priority
+  const highPriorityTasks = projectTasks.filter(task => task.priority === 'high');
 
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-medium">
@@ -71,14 +81,27 @@ export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
         </p>
       </CardHeader>
       <CardContent className="p-6 pt-0">
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground mb-4">
-          <CheckSquare size={14} />
-          <span>{projectTasks.length} tasks</span>
-          {projectTasks.length > 0 && (
-            <span className="ml-1">
-              ({completedTasks} completed, {projectTasks.length - completedTasks} remaining)
-            </span>
+        <div className="flex flex-wrap gap-2 mb-4">
+          <Badge variant="outline" className="flex items-center gap-1">
+            <CheckSquare size={12} />
+            <span>{projectTasks.length} tasks</span>
+          </Badge>
+          
+          {highPriorityTasks.length > 0 && (
+            <Badge variant="destructive" className="flex items-center gap-1">
+              <span>{highPriorityTasks.length} high priority</span>
+            </Badge>
           )}
+          
+          <Badge variant="outline" className="flex items-center gap-1">
+            <CheckCircle2 size={12} className="text-green-500" />
+            <span>{completedTasks.length} completed</span>
+          </Badge>
+          
+          <Badge variant="outline" className="flex items-center gap-1">
+            <Clock size={12} className="text-amber-500" />
+            <span>{inProgressTasks.length} in progress</span>
+          </Badge>
         </div>
         
         {teamMembers.length > 0 && (
