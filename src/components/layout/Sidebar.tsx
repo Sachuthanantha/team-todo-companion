@@ -11,7 +11,8 @@ import {
   ChevronRight,
   Menu,
   X,
-  Briefcase
+  Briefcase,
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -132,6 +133,13 @@ export function Sidebar() {
             to="/team"
             icon={<Users size={isCollapsed ? 20 : 18} />}
             label="Team"
+            isCollapsed={isCollapsed}
+            onClick={closeMobileSidebar}
+          />
+          <NavItem
+            to="/messages"
+            icon={<MessageSquare size={isCollapsed ? 20 : 18} />}
+            label="Messages"
             isCollapsed={isCollapsed}
             onClick={closeMobileSidebar}
           />
