@@ -16,6 +16,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Users } from 'lucide-react';
+import { toast } from "sonner";
 
 interface NewConversationDialogProps {
   open: boolean;
@@ -54,6 +55,7 @@ export const NewConversationDialog = ({
   
   const handleCreateConversation = () => {
     if (selectedMemberIds.length === 0) {
+      toast.error("Please select at least one team member");
       return;
     }
     
@@ -70,6 +72,7 @@ export const NewConversationDialog = ({
       if (existingDirectConversation) {
         onConversationCreated(existingDirectConversation.id);
         onOpenChange(false);
+        toast.info("Opened existing conversation");
         return;
       }
     }
@@ -90,12 +93,23 @@ export const NewConversationDialog = ({
     setGroupName('');
     setSearchTerm('');
     setSelectedMemberIds([]);
+    
+    toast.success(isGroup ? "Group conversation created" : "Conversation started");
   };
   
   const isValid = selectedMemberIds.length > 0 && (!isGroup || (isGroup && groupName.trim() !== ''));
   
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(newOpen) => {
+      // Reset form when closing
+      if (!newOpen) {
+        setIsGroup(false);
+        setGroupName('');
+        setSearchTerm('');
+        setSelectedMemberIds([]);
+      }
+      onOpenChange(newOpen);
+    }}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>New Conversation</DialogTitle>
