@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 
@@ -32,6 +31,24 @@ export interface Project {
   tasks: string[];
 }
 
+export interface Message {
+  id: string;
+  senderId: string;
+  content: string;
+  timestamp: string;
+  read: boolean;
+}
+
+export interface Conversation {
+  id: string;
+  name?: string;
+  participantIds: string[];
+  isGroup: boolean;
+  messages: Message[];
+  createdAt: string;
+  lastMessageAt: string;
+}
+
 interface AppContextType {
   // Sidebar state
   sidebarOpen: boolean;
@@ -61,6 +78,16 @@ interface AppContextType {
   addProject: (project: Omit<Project, 'id'>) => void;
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
+  
+  // Messages
+  conversations: Conversation[];
+  addConversation: (conversation: Omit<Conversation, 'id' | 'createdAt' | 'lastMessageAt'>) => Conversation;
+  updateConversation: (conversation: Conversation) => void;
+  deleteConversation: (id: string) => void;
+  addMessage: (conversationId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
+  getConversationsForUser: (userId: string) => Conversation[];
+  getConversationById: (id: string) => Conversation | undefined;
+  getCurrentUserId: () => string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -141,6 +168,57 @@ const initialProjects: Project[] = [
   }
 ];
 
+// Sample initial conversations
+const initialConversations: Conversation[] = [
+  {
+    id: 'conv1',
+    name: 'Website Redesign Team',
+    participantIds: ['tm1', 'tm2', 'tm3'],
+    isGroup: true,
+    messages: [
+      {
+        id: 'msg1',
+        senderId: 'tm1',
+        content: "Hi team, let's discuss the new website design.",
+        timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg2',
+        senderId: 'tm2',
+        content: "I've prepared some mockups. Will share them shortly.",
+        timestamp: new Date(Date.now() - 86400000).toISOString(),
+        read: true
+      }
+    ],
+    createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
+    lastMessageAt: new Date(Date.now() - 86400000).toISOString()
+  },
+  {
+    id: 'conv2',
+    participantIds: ['tm1', 'tm2'],
+    isGroup: false,
+    messages: [
+      {
+        id: 'msg3',
+        senderId: 'tm1',
+        content: "Hi Sam, how's the design coming along?",
+        timestamp: new Date(Date.now() - 86400000 * 1.5).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg4',
+        senderId: 'tm2',
+        content: "It's going well! I should have it ready by tomorrow.",
+        timestamp: new Date(Date.now() - 86400000 * 1).toISOString(),
+        read: false
+      }
+    ],
+    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    lastMessageAt: new Date(Date.now() - 86400000 * 1).toISOString()
+  }
+];
+
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [tasks, setTasks] = useState<Task[]>(() => {
@@ -155,6 +233,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const savedProjects = localStorage.getItem('projects');
     return savedProjects ? JSON.parse(savedProjects) : initialProjects;
   });
+  const [conversations, setConversations] = useState<Conversation[]>(() => {
+    const savedConversations = localStorage.getItem('conversations');
+    return savedConversations ? JSON.parse(savedConversations) : initialConversations;
+  });
   
   const { toast } = useToast();
   
@@ -163,7 +245,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
     localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
     localStorage.setItem('projects', JSON.stringify(projects));
-  }, [tasks, teamMembers, projects]);
+    localStorage.setItem('conversations', JSON.stringify(conversations));
+  }, [tasks, teamMembers, projects, conversations]);
   
   const toggleSidebar = () => {
     setSidebarOpen(prev => !prev);
@@ -272,6 +355,68 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     showSuccessToast('Project deleted successfully');
   };
 
+  // Messages methods
+  const addConversation = (conversation: Omit<Conversation, 'id' | 'createdAt' | 'lastMessageAt'>) => {
+    const now = new Date().toISOString();
+    const newConversation: Conversation = {
+      ...conversation,
+      id: generateId(),
+      createdAt: now,
+      lastMessageAt: now
+    };
+    setConversations(prev => [...prev, newConversation]);
+    showSuccessToast('Conversation created successfully');
+    return newConversation;
+  };
+
+  const updateConversation = (conversation: Conversation) => {
+    setConversations(prev => prev.map(c => c.id === conversation.id ? conversation : c));
+  };
+
+  const deleteConversation = (id: string) => {
+    setConversations(prev => prev.filter(c => c.id !== id));
+    showSuccessToast('Conversation deleted successfully');
+  };
+
+  const addMessage = (conversationId: string, message: Omit<Message, 'id' | 'timestamp'>) => {
+    const now = new Date().toISOString();
+    const newMessage: Message = {
+      ...message,
+      id: generateId(),
+      timestamp: now,
+    };
+    
+    setConversations(prev => 
+      prev.map(conv => {
+        if (conv.id === conversationId) {
+          return {
+            ...conv,
+            messages: [...conv.messages, newMessage],
+            lastMessageAt: now
+          };
+        }
+        return conv;
+      })
+    );
+  };
+
+  const getConversationsForUser = (userId: string) => {
+    return conversations.filter(conv => 
+      conv.participantIds.includes(userId)
+    ).sort((a, b) => 
+      new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
+    );
+  };
+
+  const getConversationById = (id: string) => {
+    return conversations.find(conv => conv.id === id);
+  };
+  
+  // For demo purposes, we'll assume the first team member is the current user
+  const getCurrentUserId = () => {
+    return teamMembers[0]?.id || '';
+  };
+
   return (
     <AppContext.Provider value={{ 
       sidebarOpen, 
@@ -292,7 +437,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       projects,
       addProject,
       updateProject,
-      deleteProject
+      deleteProject,
+      conversations,
+      addConversation,
+      updateConversation,
+      deleteConversation,
+      addMessage,
+      getConversationsForUser,
+      getConversationById,
+      getCurrentUserId
     }}>
       {children}
     </AppContext.Provider>
