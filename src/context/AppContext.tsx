@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 // Type Definitions
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type TaskStatus = 'todo' | 'inProcess' | 'completed';
+export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
 
 export interface Task {
   id: string;
@@ -22,6 +23,8 @@ export interface TeamMember {
   role: string;
   email: string;
   avatar?: string;
+  isOnline?: boolean;
+  lastActive?: string;
 }
 
 export interface Project {
@@ -37,6 +40,14 @@ export interface Message {
   content: string;
   timestamp: string;
   read: boolean;
+  status?: MessageStatus;
+  attachments?: {
+    id: string;
+    name: string;
+    type: string;
+    url: string;
+    size: number;
+  }[];
 }
 
 export interface Conversation {
@@ -47,6 +58,7 @@ export interface Conversation {
   messages: Message[];
   createdAt: string;
   lastMessageAt: string;
+  typingUsers?: string[];
 }
 
 interface AppContextType {
@@ -81,13 +93,17 @@ interface AppContextType {
   
   // Messages
   conversations: Conversation[];
-  addConversation: (conversation: Omit<Conversation, 'id' | 'createdAt' | 'lastMessageAt'>) => Conversation;
+  addConversation: (conversation: Omit<Conversation, 'id' | 'createdAt' | 'lastMessageAt' | 'typingUsers'>) => Conversation;
   updateConversation: (conversation: Conversation) => void;
   deleteConversation: (id: string) => void;
-  addMessage: (conversationId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
+  addMessage: (conversationId: string, message: Omit<Message, 'id' | 'timestamp' | 'status'>) => void;
   getConversationsForUser: (userId: string) => Conversation[];
   getConversationById: (id: string) => Conversation | undefined;
   getCurrentUserId: () => string;
+  setUserTyping: (conversationId: string, userId: string, isTyping: boolean) => void;
+  markMessagesAsRead: (conversationId: string) => void;
+  simulateMessageDelivery: (messageId: string, conversationId: string) => void;
+  toggleUserOnlineStatus: (userId: string, isOnline: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -102,21 +118,27 @@ const initialTeamMembers: TeamMember[] = [
     name: 'Alex Johnson',
     role: 'Product Manager',
     email: 'alex@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=1'
+    avatar: 'https://i.pravatar.cc/150?img=1',
+    isOnline: true,
+    lastActive: new Date().toISOString()
   },
   {
     id: 'tm2',
     name: 'Sam Rodriguez',
     role: 'UX Designer',
     email: 'sam@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=2'
+    avatar: 'https://i.pravatar.cc/150?img=2',
+    isOnline: false,
+    lastActive: new Date(Date.now() - 1800000).toISOString() // 30 minutes ago
   },
   {
     id: 'tm3',
     name: 'Taylor Kim',
     role: 'Developer',
     email: 'taylor@example.com',
-    avatar: 'https://i.pravatar.cc/150?img=3'
+    avatar: 'https://i.pravatar.cc/150?img=3',
+    isOnline: true,
+    lastActive: new Date().toISOString()
   }
 ];
 
@@ -168,7 +190,7 @@ const initialProjects: Project[] = [
   }
 ];
 
-// Sample initial conversations
+// Updated sample conversations with message status
 const initialConversations: Conversation[] = [
   {
     id: 'conv1',
@@ -181,18 +203,21 @@ const initialConversations: Conversation[] = [
         senderId: 'tm1',
         content: "Hi team, let's discuss the new website design.",
         timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
-        read: true
+        read: true,
+        status: 'read'
       },
       {
         id: 'msg2',
         senderId: 'tm2',
         content: "I've prepared some mockups. Will share them shortly.",
         timestamp: new Date(Date.now() - 86400000).toISOString(),
-        read: true
+        read: true,
+        status: 'read'
       }
     ],
     createdAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-    lastMessageAt: new Date(Date.now() - 86400000).toISOString()
+    lastMessageAt: new Date(Date.now() - 86400000).toISOString(),
+    typingUsers: []
   },
   {
     id: 'conv2',
@@ -204,18 +229,21 @@ const initialConversations: Conversation[] = [
         senderId: 'tm1',
         content: "Hi Sam, how's the design coming along?",
         timestamp: new Date(Date.now() - 86400000 * 1.5).toISOString(),
-        read: true
+        read: true,
+        status: 'read'
       },
       {
         id: 'msg4',
         senderId: 'tm2',
         content: "It's going well! I should have it ready by tomorrow.",
         timestamp: new Date(Date.now() - 86400000 * 1).toISOString(),
-        read: false
+        read: false,
+        status: 'delivered'
       }
     ],
     createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-    lastMessageAt: new Date(Date.now() - 86400000 * 1).toISOString()
+    lastMessageAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+    typingUsers: []
   }
 ];
 
@@ -356,7 +384,7 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // Messages methods
-  const addConversation = (conversation: Omit<Conversation, 'id' | 'createdAt' | 'lastMessageAt'>) => {
+  const addConversation = (conversation: Omit<Conversation, 'id' | 'createdAt' | 'lastMessageAt' | 'typingUsers'>) => {
     const now = new Date().toISOString();
     const newConversation: Conversation = {
       ...conversation,
@@ -378,12 +406,13 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     showSuccessToast('Conversation deleted successfully');
   };
 
-  const addMessage = (conversationId: string, message: Omit<Message, 'id' | 'timestamp'>) => {
+  const addMessage = (conversationId: string, message: Omit<Message, 'id' | 'timestamp' | 'status'>) => {
     const now = new Date().toISOString();
     const newMessage: Message = {
       ...message,
       id: generateId(),
       timestamp: now,
+      status: 'sending', // Initial status
     };
     
     setConversations(prev => 
@@ -392,10 +421,97 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
           return {
             ...conv,
             messages: [...conv.messages, newMessage],
-            lastMessageAt: now
+            lastMessageAt: now,
+            typingUsers: conv.typingUsers?.filter(id => id !== message.senderId) || []
           };
         }
         return conv;
+      })
+    );
+    
+    // Simulate message being sent after a delay
+    setTimeout(() => {
+      simulateMessageDelivery(newMessage.id, conversationId);
+    }, 1000);
+  };
+
+  const simulateMessageDelivery = (messageId: string, conversationId: string) => {
+    setConversations(prev => 
+      prev.map(conv => {
+        if (conv.id === conversationId) {
+          return {
+            ...conv,
+            messages: conv.messages.map(msg => {
+              if (msg.id === messageId) {
+                return {
+                  ...msg,
+                  status: 'delivered' as MessageStatus
+                };
+              }
+              return msg;
+            })
+          };
+        }
+        return conv;
+      })
+    );
+  };
+
+  const markMessagesAsRead = (conversationId: string) => {
+    const currentUserId = getCurrentUserId();
+    
+    setConversations(prev => 
+      prev.map(conv => {
+        if (conv.id === conversationId) {
+          return {
+            ...conv,
+            messages: conv.messages.map(msg => {
+              if (msg.senderId !== currentUserId && !msg.read) {
+                return {
+                  ...msg,
+                  read: true,
+                  status: 'read' as MessageStatus
+                };
+              }
+              return msg;
+            })
+          };
+        }
+        return conv;
+      })
+    );
+  };
+
+  const setUserTyping = (conversationId: string, userId: string, isTyping: boolean) => {
+    setConversations(prev => 
+      prev.map(conv => {
+        if (conv.id === conversationId) {
+          const typingUsers = conv.typingUsers || [];
+          const updatedTypingUsers = isTyping 
+            ? [...new Set([...typingUsers, userId])]
+            : typingUsers.filter(id => id !== userId);
+          
+          return {
+            ...conv,
+            typingUsers: updatedTypingUsers
+          };
+        }
+        return conv;
+      })
+    );
+  };
+
+  const toggleUserOnlineStatus = (userId: string, isOnline: boolean) => {
+    setTeamMembers(prev => 
+      prev.map(member => {
+        if (member.id === userId) {
+          return {
+            ...member,
+            isOnline,
+            lastActive: isOnline ? new Date().toISOString() : member.lastActive
+          };
+        }
+        return member;
       })
     );
   };
@@ -445,7 +561,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       addMessage,
       getConversationsForUser,
       getConversationById,
-      getCurrentUserId
+      getCurrentUserId,
+      setUserTyping,
+      markMessagesAsRead,
+      simulateMessageDelivery,
+      toggleUserOnlineStatus
     }}>
       {children}
     </AppContext.Provider>
