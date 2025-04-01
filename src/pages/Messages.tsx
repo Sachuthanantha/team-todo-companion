@@ -17,7 +17,8 @@ import {
   ChevronRight,
   Paperclip,
   Image,
-  File
+  File,
+  Video
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { NewConversationDialog } from '@/components/messages/NewConversationDialog';
@@ -26,6 +27,8 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from "sonner";
 import { MessageIndicator } from '@/components/messages/MessageIndicator';
 import { MessageItem } from '@/components/messages/MessageItem';
+import { MessageButtons } from '@/components/messages/MessageButtons';
+import { MeetingDialog } from '@/components/meetings/MeetingDialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const Messages = () => {
@@ -52,6 +55,7 @@ const Messages = () => {
   const [viewMode, setViewMode] = useState<'all' | 'direct' | 'groups'>('all');
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [meetingDialogOpen, setMeetingDialogOpen] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -165,6 +169,14 @@ const Messages = () => {
   
   const handleAttachmentClick = (type: string) => {
     toast.info(`${type} attachment feature coming soon!`);
+  };
+  
+  const handleScheduleMeeting = () => {
+    if (selectedConversationId) {
+      setMeetingDialogOpen(true);
+    } else {
+      toast.error("Please select a conversation first");
+    }
   };
 
   return (
@@ -352,24 +364,42 @@ const Messages = () => {
                   </p>
                 </div>
               </div>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleScheduleMeeting}
+              >
+                <Video className="h-4 w-4 mr-2" />
+                Schedule Meeting
+              </Button>
             </div>
             
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {selectedConversation.messages.length > 0 ? (
-                  selectedConversation.messages.map((message) => {
-                    const isCurrentUser = message.senderId === currentUserId;
-                    const sender = getMessageSender(message);
+                  <>
+                    {selectedConversation.messages.map((message) => {
+                      const isCurrentUser = message.senderId === currentUserId;
+                      const sender = getMessageSender(message);
+                      
+                      return (
+                        <MessageItem 
+                          key={message.id}
+                          message={message}
+                          isCurrentUser={isCurrentUser}
+                          sender={sender}
+                        />
+                      );
+                    })}
                     
-                    return (
-                      <MessageItem 
-                        key={message.id}
-                        message={message}
-                        isCurrentUser={isCurrentUser}
-                        sender={sender}
+                    {selectedConversation.messages.length >= 3 && (
+                      <MessageButtons 
+                        onScheduleMeeting={handleScheduleMeeting}
+                        conversationId={selectedConversation.id}
                       />
-                    );
-                  })
+                    )}
+                  </>
                 ) : (
                   <div className="py-12 text-center">
                     <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
@@ -472,6 +502,12 @@ const Messages = () => {
         onConversationCreated={(conversationId) => {
           setSelectedConversationId(conversationId);
         }}
+      />
+      
+      <MeetingDialog
+        open={meetingDialogOpen}
+        onOpenChange={setMeetingDialogOpen}
+        conversationId={selectedConversationId || undefined}
       />
     </div>
   );

@@ -5,6 +5,8 @@ import { useToast } from "@/hooks/use-toast";
 export type TaskPriority = 'low' | 'medium' | 'high';
 export type TaskStatus = 'todo' | 'inProcess' | 'completed';
 export type MessageStatus = 'sending' | 'sent' | 'delivered' | 'read';
+export type MeetingStatus = 'scheduled' | 'ongoing' | 'completed' | 'canceled';
+export type MeetingVisibility = 'public' | 'private';
 
 export interface Task {
   id: string;
@@ -34,6 +36,24 @@ export interface Project {
   tasks: string[];
 }
 
+export interface Meeting {
+  id: string;
+  title: string;
+  description?: string;
+  startTime: string;
+  endTime: string;
+  organizerId: string;
+  participantIds: string[];
+  status: MeetingStatus;
+  visibility: MeetingVisibility;
+  meetingLink?: string;
+  meetingPlatform?: 'in-app' | 'zoom' | 'google-meet' | 'teams';
+  recurringType?: 'none' | 'daily' | 'weekly' | 'monthly';
+  conversationId?: string;
+  isAllDay?: boolean;
+  createdAt: string;
+}
+
 export interface Message {
   id: string;
   senderId: string;
@@ -48,6 +68,7 @@ export interface Message {
     url: string;
     size: number;
   }[];
+  meetingId?: string;
 }
 
 export interface Conversation {
@@ -59,6 +80,7 @@ export interface Conversation {
   createdAt: string;
   lastMessageAt: string;
   typingUsers?: string[];
+  meetings?: string[];
 }
 
 interface AppContextType {
@@ -91,6 +113,17 @@ interface AppContextType {
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
   
+  // Meetings
+  meetings: Meeting[];
+  addMeeting: (meeting: Omit<Meeting, 'id' | 'createdAt' | 'status'>) => Meeting;
+  updateMeeting: (meeting: Meeting) => void;
+  deleteMeeting: (id: string) => void;
+  getMeetingsByStatus: (status: MeetingStatus) => Meeting[];
+  getMeetingsByParticipant: (participantId: string) => Meeting[];
+  getUpcomingMeetings: (limit?: number) => Meeting[];
+  getCurrentMeetings: () => Meeting[];
+  joinMeeting: (meetingId: string) => void;
+  
   // Messages
   conversations: Conversation[];
   addConversation: (conversation: Omit<Conversation, 'id' | 'createdAt' | 'lastMessageAt' | 'typingUsers'>) => Conversation;
@@ -104,6 +137,7 @@ interface AppContextType {
   markMessagesAsRead: (conversationId: string) => void;
   simulateMessageDelivery: (messageId: string, conversationId: string) => void;
   toggleUserOnlineStatus: (userId: string, isOnline: boolean) => void;
+  createMeetingFromConversation: (conversationId: string, meetingDetails: Omit<Meeting, 'id' | 'createdAt' | 'participantIds' | 'status' | 'conversationId' | 'organizerId'>) => Meeting;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -190,6 +224,38 @@ const initialProjects: Project[] = [
   }
 ];
 
+// Sample meetings
+const initialMeetings: Meeting[] = [
+  {
+    id: 'meet1',
+    title: 'Weekly Team Sync',
+    description: 'Regular team catch-up and progress updates',
+    startTime: new Date(Date.now() + 3600000).toISOString(), // 1 hour from now
+    endTime: new Date(Date.now() + 5400000).toISOString(), // 1.5 hours from now
+    organizerId: 'tm1',
+    participantIds: ['tm1', 'tm2', 'tm3'],
+    status: 'scheduled',
+    visibility: 'public',
+    meetingPlatform: 'in-app',
+    recurringType: 'weekly',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 'meet2',
+    title: 'Design Review',
+    description: 'Review new homepage design concepts',
+    startTime: new Date(Date.now() + 86400000).toISOString(), // 1 day from now
+    endTime: new Date(Date.now() + 90000000).toISOString(), // 1 day + 1 hour from now
+    organizerId: 'tm2',
+    participantIds: ['tm1', 'tm2'],
+    status: 'scheduled',
+    visibility: 'private',
+    meetingPlatform: 'zoom',
+    recurringType: 'none',
+    createdAt: new Date().toISOString()
+  }
+];
+
 // Updated sample conversations with message status
 const initialConversations: Conversation[] = [
   {
@@ -265,6 +331,10 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const savedConversations = localStorage.getItem('conversations');
     return savedConversations ? JSON.parse(savedConversations) : initialConversations;
   });
+  const [meetings, setMeetings] = useState<Meeting[]>(() => {
+    const savedMeetings = localStorage.getItem('meetings');
+    return savedMeetings ? JSON.parse(savedMeetings) : initialMeetings;
+  });
   
   const { toast } = useToast();
   
@@ -274,7 +344,42 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
     localStorage.setItem('projects', JSON.stringify(projects));
     localStorage.setItem('conversations', JSON.stringify(conversations));
-  }, [tasks, teamMembers, projects, conversations]);
+    localStorage.setItem('meetings', JSON.stringify(meetings));
+  }, [tasks, teamMembers, projects, conversations, meetings]);
+  
+  // Update meeting statuses based on current time
+  useEffect(() => {
+    const updateMeetingStatuses = () => {
+      const now = new Date();
+      
+      setMeetings(prevMeetings => 
+        prevMeetings.map(meeting => {
+          const startTime = new Date(meeting.startTime);
+          const endTime = new Date(meeting.endTime);
+          
+          if (meeting.status === 'canceled') {
+            return meeting;
+          }
+          
+          if (now >= startTime && now <= endTime) {
+            return { ...meeting, status: 'ongoing' };
+          } else if (now > endTime) {
+            return { ...meeting, status: 'completed' };
+          } else {
+            return { ...meeting, status: 'scheduled' };
+          }
+        })
+      );
+    };
+    
+    // Update meeting statuses immediately
+    updateMeetingStatuses();
+    
+    // Then update meeting statuses every minute
+    const intervalId = setInterval(updateMeetingStatuses, 60000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
   
   const toggleSidebar = () => {
     setSidebarOpen(prev => !prev);
@@ -381,6 +486,135 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const deleteProject = (id: string) => {
     setProjects(prev => prev.filter(p => p.id !== id));
     showSuccessToast('Project deleted successfully');
+  };
+
+  // Meeting methods
+  const addMeeting = (meeting: Omit<Meeting, 'id' | 'createdAt' | 'status'>) => {
+    const newMeeting: Meeting = {
+      ...meeting,
+      id: generateId(),
+      createdAt: new Date().toISOString(),
+      status: 'scheduled'
+    };
+    
+    setMeetings(prev => [...prev, newMeeting]);
+    showSuccessToast('Meeting scheduled successfully');
+    return newMeeting;
+  };
+  
+  const updateMeeting = (meeting: Meeting) => {
+    setMeetings(prev => prev.map(m => m.id === meeting.id ? meeting : m));
+    showSuccessToast('Meeting updated successfully');
+  };
+  
+  const deleteMeeting = (id: string) => {
+    setMeetings(prev => prev.filter(m => m.id !== id));
+    showSuccessToast('Meeting canceled successfully');
+  };
+  
+  const getMeetingsByStatus = (status: MeetingStatus) => {
+    return meetings.filter(meeting => meeting.status === status);
+  };
+  
+  const getMeetingsByParticipant = (participantId: string) => {
+    return meetings.filter(meeting => 
+      meeting.participantIds.includes(participantId) || meeting.organizerId === participantId
+    );
+  };
+  
+  const getUpcomingMeetings = (limit?: number) => {
+    const now = new Date();
+    
+    const upcomingMeetings = meetings
+      .filter(meeting => 
+        new Date(meeting.startTime) > now && 
+        meeting.status !== 'canceled' && 
+        meeting.status !== 'completed'
+      )
+      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+    
+    return limit ? upcomingMeetings.slice(0, limit) : upcomingMeetings;
+  };
+  
+  const getCurrentMeetings = () => {
+    const now = new Date();
+    
+    return meetings.filter(meeting => 
+      meeting.status === 'ongoing' || 
+      (new Date(meeting.startTime) <= now && new Date(meeting.endTime) >= now)
+    );
+  };
+  
+  const joinMeeting = (meetingId: string) => {
+    const meeting = meetings.find(m => m.id === meetingId);
+    
+    if (!meeting) {
+      showErrorToast('Meeting not found');
+      return;
+    }
+    
+    if (meeting.status === 'canceled') {
+      showErrorToast('This meeting has been canceled');
+      return;
+    }
+    
+    if (meeting.status === 'completed') {
+      showErrorToast('This meeting has already ended');
+      return;
+    }
+    
+    // In a real application, this would redirect to the meeting room or launch the meeting platform
+    showSuccessToast(`Joining meeting: ${meeting.title}`);
+    
+    // For demonstration, we'll just simulate joining by updating the meeting status to ongoing if it's not already
+    if (meeting.status === 'scheduled') {
+      updateMeeting({ ...meeting, status: 'ongoing' });
+    }
+  };
+  
+  const createMeetingFromConversation = (
+    conversationId: string, 
+    meetingDetails: Omit<Meeting, 'id' | 'createdAt' | 'participantIds' | 'status' | 'conversationId' | 'organizerId'>
+  ) => {
+    const conversation = conversations.find(c => c.id === conversationId);
+    
+    if (!conversation) {
+      showErrorToast('Conversation not found');
+      throw new Error('Conversation not found');
+    }
+    
+    const currentUserId = getCurrentUserId();
+    
+    const newMeeting = addMeeting({
+      ...meetingDetails,
+      organizerId: currentUserId,
+      participantIds: conversation.participantIds,
+      visibility: 'private',
+      conversationId
+    });
+    
+    // Update the conversation to reference this meeting
+    setConversations(prev => 
+      prev.map(conv => {
+        if (conv.id === conversationId) {
+          return {
+            ...conv,
+            meetings: [...(conv.meetings || []), newMeeting.id]
+          };
+        }
+        return conv;
+      })
+    );
+    
+    // Add a message to the conversation about the meeting
+    addMessage(conversationId, {
+      senderId: currentUserId,
+      content: `I've scheduled a meeting: "${newMeeting.title}" for ${new Date(newMeeting.startTime).toLocaleString()}`,
+      read: false,
+      meetingId: newMeeting.id
+    });
+    
+    return newMeeting;
   };
 
   // Messages methods
@@ -554,6 +788,15 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       addProject,
       updateProject,
       deleteProject,
+      meetings,
+      addMeeting,
+      updateMeeting,
+      deleteMeeting,
+      getMeetingsByStatus,
+      getMeetingsByParticipant,
+      getUpcomingMeetings,
+      getCurrentMeetings,
+      joinMeeting,
       conversations,
       addConversation,
       updateConversation,
@@ -565,7 +808,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       setUserTyping,
       markMessagesAsRead,
       simulateMessageDelivery,
-      toggleUserOnlineStatus
+      toggleUserOnlineStatus,
+      createMeetingFromConversation
     }}>
       {children}
     </AppContext.Provider>
