@@ -8,23 +8,35 @@ interface MessageIndicatorProps {
 }
 
 export const MessageIndicator = ({ senderId, senderName }: MessageIndicatorProps) => {
+  const [dotCount, setDotCount] = useState(1);
   const [visible, setVisible] = useState(true);
   
-  // Simulate typing effect that eventually disappears
+  // Animate the typing dots
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false);
-    }, 3000);
+    const dotTimer = setInterval(() => {
+      setDotCount(prev => prev < 3 ? prev + 1 : 1);
+    }, 500);
     
-    return () => clearTimeout(timer);
+    // Simulate typing effect that eventually disappears
+    const visibilityTimer = setTimeout(() => {
+      setVisible(false);
+    }, 5000);
+    
+    return () => {
+      clearInterval(dotTimer);
+      clearTimeout(visibilityTimer);
+    };
   }, []);
   
   if (!visible) return null;
 
+  // Generate dots based on the current count
+  const dots = '.'.repeat(dotCount);
+
   return (
     <div className="flex items-center text-xs text-muted-foreground animate-fade-in ml-2 mt-1">
       <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-      <span>{senderName} is typing...</span>
+      <span>{senderName} is typing{dots}</span>
     </div>
   );
 };
