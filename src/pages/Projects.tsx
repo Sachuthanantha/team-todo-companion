@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
-import { Project, TeamMember, useApp } from '@/context/AppContext';
-import { Briefcase, Plus, Search, Users } from 'lucide-react';
+import { Project, useApp } from '@/context/AppContext';
+import { Briefcase, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ProjectCard } from '@/components/projects/ProjectCard';

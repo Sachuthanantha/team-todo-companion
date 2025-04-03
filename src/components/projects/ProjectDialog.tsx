@@ -29,6 +29,7 @@ interface ProjectDialogProps {
 export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDialogProps) => {
   const { addProject, updateProject, teamMembers, clients } = useApp();
   
+  // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
@@ -37,34 +38,38 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
   
   // Create options array for team member selection
-  const memberOptions = teamMembers.map(member => ({
+  const memberOptions: Option[] = teamMembers.map(member => ({
     value: member.id,
     label: `${member.name} (${member.role})`
   }));
 
   // Convert selected member IDs to option objects for MultiSelect
-  const selectedMemberOptions: Option[] = selectedMemberIds.map(id => {
-    const member = teamMembers.find(m => m.id === id);
-    return {
-      value: id,
-      label: member ? `${member.name} (${member.role})` : id
-    };
-  });
+  const selectedMemberOptions: Option[] = selectedMemberIds
+    .map(id => {
+      const member = teamMembers.find(m => m.id === id);
+      return member ? {
+        value: id,
+        label: `${member.name} (${member.role})`
+      } : null;
+    })
+    .filter((option): option is Option => option !== null);
   
   // Create options array for client selection
-  const clientOptions = clients.map(client => ({
+  const clientOptions: Option[] = clients.map(client => ({
     value: client.id,
     label: `${client.name} (${client.company})`
   }));
   
   // Convert selected client IDs to option objects for MultiSelect
-  const selectedClientOptions: Option[] = selectedClientIds.map(id => {
-    const client = clients.find(c => c.id === id);
-    return {
-      value: id,
-      label: client ? `${client.name} (${client.company})` : id
-    };
-  });
+  const selectedClientOptions: Option[] = selectedClientIds
+    .map(id => {
+      const client = clients.find(c => c.id === id);
+      return client ? {
+        value: id,
+        label: `${client.name} (${client.company})`
+      } : null;
+    })
+    .filter((option): option is Option => option !== null);
 
   useEffect(() => {
     if (initialProject) {

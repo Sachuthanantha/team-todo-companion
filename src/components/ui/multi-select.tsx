@@ -27,11 +27,11 @@ export function MultiSelect({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState("");
+  const commandRef = React.useRef<HTMLDivElement>(null);
 
-  // Ensure value is always an array
-  const safeValue = Array.isArray(value) ? value : [];
-  // Ensure options is always an array
+  // Always ensure we have arrays to work with
   const safeOptions = Array.isArray(options) ? options : [];
+  const safeValue = Array.isArray(value) ? value : [];
 
   const handleUnselect = (option: Option) => {
     onChange(safeValue.filter((item) => item.value !== option.value));
@@ -48,15 +48,22 @@ export function MultiSelect({
   };
 
   // Filter options based on input value
-  const displayOptions = safeOptions.filter((option) => {
+  const filteredOptions = safeOptions.filter((option) => {
     const matchesInput = option.label
       .toLowerCase()
       .includes(inputValue.toLowerCase());
     return matchesInput;
   });
 
-  // Create a ref for tracking dropdown state
-  const commandRef = React.useRef<HTMLDivElement>(null);
+  const handleBlur = (e: React.FocusEvent) => {
+    // Only close if the click is not within our components
+    const commandEl = commandRef.current;
+    const relatedTarget = e.relatedTarget as Node;
+    
+    if (!commandEl?.contains(relatedTarget) && e.target !== relatedTarget) {
+      setOpen(false);
+    }
+  };
 
   return (
     <div className="relative w-full">
@@ -100,21 +107,17 @@ export function MultiSelect({
             className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
             placeholder={safeValue.length === 0 ? placeholder : ""}
             onFocus={() => setOpen(true)}
-            onBlur={(e) => {
-              // Only close if the click is not within our dropdown
-              if (!commandRef.current?.contains(e.relatedTarget as Node)) {
-                setOpen(false);
-              }
-            }}
+            onBlur={handleBlur}
           />
         </div>
       </div>
+      
       {open && (
-        <div className="relative" ref={commandRef}>
-          {displayOptions.length > 0 ? (
-            <Command className="absolute top-0 w-full z-50 bg-popover shadow-md rounded-md border border-border mt-1">
-              <CommandGroup className="max-h-[200px] overflow-auto">
-                {displayOptions.map((option) => {
+        <div className="relative z-50" ref={commandRef}>
+          <Command className="absolute top-0 w-full bg-popover shadow-md rounded-md border border-border mt-1 overflow-hidden">
+            <CommandGroup className="max-h-[200px] overflow-auto">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => {
                   const isSelected = safeValue.some(
                     (item) => item.value === option.value
                   );
@@ -138,18 +141,14 @@ export function MultiSelect({
                       {option.label}
                     </CommandItem>
                   );
-                })}
-              </CommandGroup>
-            </Command>
-          ) : (
-            <Command className="absolute top-0 w-full z-50 bg-popover shadow-md rounded-md border border-border mt-1">
-              <CommandGroup className="max-h-[200px] overflow-auto">
-                <div className="py-2 px-4 text-sm text-muted-foreground">
+                })
+              ) : (
+                <div className="py-6 text-center text-sm text-muted-foreground">
                   No options found.
                 </div>
-              </CommandGroup>
-            </Command>
-          )}
+              )}
+            </CommandGroup>
+          </Command>
         </div>
       )}
     </div>
