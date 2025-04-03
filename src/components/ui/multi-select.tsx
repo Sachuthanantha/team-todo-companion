@@ -30,6 +30,8 @@ export function MultiSelect({
 
   // Ensure value is always an array
   const safeValue = Array.isArray(value) ? value : [];
+  // Ensure options is always an array
+  const safeOptions = Array.isArray(options) ? options : [];
 
   const handleUnselect = (option: Option) => {
     onChange(safeValue.filter((item) => item.value !== option.value));
@@ -46,12 +48,15 @@ export function MultiSelect({
   };
 
   // Filter options based on input value
-  const displayOptions = (options || []).filter((option) => {
+  const displayOptions = safeOptions.filter((option) => {
     const matchesInput = option.label
       .toLowerCase()
       .includes(inputValue.toLowerCase());
     return matchesInput;
   });
+
+  // Create a ref for tracking dropdown state
+  const commandRef = React.useRef<HTMLDivElement>(null);
 
   return (
     <div className="relative w-full">
@@ -95,56 +100,58 @@ export function MultiSelect({
             className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
             placeholder={safeValue.length === 0 ? placeholder : ""}
             onFocus={() => setOpen(true)}
-            onBlur={() => {
-              // Delay closing to allow for item selection
-              setTimeout(() => setOpen(false), 200);
+            onBlur={(e) => {
+              // Only close if the click is not within our dropdown
+              if (!commandRef.current?.contains(e.relatedTarget as Node)) {
+                setOpen(false);
+              }
             }}
           />
         </div>
       </div>
-      <div className="relative">
-        {open && displayOptions.length > 0 && (
-          <Command className="absolute top-0 w-full z-50 bg-popover shadow-md rounded-md border border-border mt-1">
-            <CommandGroup className="max-h-[200px] overflow-auto">
-              {displayOptions.map((option) => {
-                const isSelected = safeValue.some(
-                  (item) => item.value === option.value
-                );
-                return (
-                  <CommandItem
-                    key={option.value}
-                    onSelect={() => handleSelect(option)}
-                    className={`flex items-center ${
-                      isSelected ? "bg-primary/10" : ""
-                    }`}
-                  >
-                    <span
-                      className={`mr-2 h-4 w-4 rounded-sm border ${
-                        isSelected
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-muted"
+      {open && (
+        <div className="relative" ref={commandRef}>
+          {displayOptions.length > 0 ? (
+            <Command className="absolute top-0 w-full z-50 bg-popover shadow-md rounded-md border border-border mt-1">
+              <CommandGroup className="max-h-[200px] overflow-auto">
+                {displayOptions.map((option) => {
+                  const isSelected = safeValue.some(
+                    (item) => item.value === option.value
+                  );
+                  return (
+                    <CommandItem
+                      key={option.value}
+                      onSelect={() => handleSelect(option)}
+                      className={`flex items-center ${
+                        isSelected ? "bg-primary/10" : ""
                       }`}
                     >
-                      {isSelected && "✓"}
-                    </span>
-                    {option.label}
-                  </CommandItem>
-                );
-              })}
-            </CommandGroup>
-          </Command>
-        )}
-        
-        {open && displayOptions.length === 0 && (
-          <Command className="absolute top-0 w-full z-50 bg-popover shadow-md rounded-md border border-border mt-1">
-            <CommandGroup className="max-h-[200px] overflow-auto">
-              <div className="py-2 px-4 text-sm text-muted-foreground">
-                No options found.
-              </div>
-            </CommandGroup>
-          </Command>
-        )}
-      </div>
+                      <span
+                        className={`mr-2 h-4 w-4 rounded-sm border ${
+                          isSelected
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-muted"
+                        }`}
+                      >
+                        {isSelected && "✓"}
+                      </span>
+                      {option.label}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </Command>
+          ) : (
+            <Command className="absolute top-0 w-full z-50 bg-popover shadow-md rounded-md border border-border mt-1">
+              <CommandGroup className="max-h-[200px] overflow-auto">
+                <div className="py-2 px-4 text-sm text-muted-foreground">
+                  No options found.
+                </div>
+              </CommandGroup>
+            </Command>
+          )}
+        </div>
+      )}
     </div>
   );
 }
