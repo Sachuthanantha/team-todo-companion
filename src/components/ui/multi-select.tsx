@@ -27,7 +27,7 @@ export function MultiSelect({
   const inputRef = React.useRef<HTMLInputElement>(null);
   const [open, setOpen] = React.useState(false);
   const [inputValue, setInputValue] = React.useState("");
-  const commandRef = React.useRef<HTMLDivElement>(null);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   // Always ensure we have arrays to work with
   const safeOptions = Array.isArray(options) ? options : [];
@@ -55,10 +55,13 @@ export function MultiSelect({
     return matchesInput;
   });
 
-  // Handle clicks outside the component to close dropdown
+  // Handle clicks outside to close dropdown
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (commandRef.current && !commandRef.current.contains(e.target as Node)) {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -70,98 +73,94 @@ export function MultiSelect({
   }, []);
 
   // The div that handles focus and displays the badges
-  const triggerElement = (
-    <div
-      className={`flex min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${className}`}
-      onClick={() => {
-        inputRef.current?.focus();
-        setOpen(true);
-      }}
-    >
-      <div className="flex flex-wrap gap-1">
-        {safeValue.map((item) => (
-          <Badge
-            key={item.value}
-            variant="secondary"
-            className="rounded-sm px-1 py-0 text-xs"
-          >
-            {item.label}
-            <button
-              type="button"
-              className="ml-1 rounded-sm text-primary-foreground hover:text-primary-foreground/80"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                handleUnselect(item);
-              }}
-            >
-              <X className="h-3 w-3" />
-              <span className="sr-only">Remove {item.label}</span>
-            </button>
-          </Badge>
-        ))}
-        <input
-          ref={inputRef}
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-          placeholder={safeValue.length === 0 ? placeholder : ""}
-          onFocus={() => setOpen(true)}
-        />
-      </div>
-    </div>
-  );
-
   return (
     <div className="relative w-full">
-      {triggerElement}
+      <div
+        className={`flex min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${className}`}
+        onClick={() => {
+          inputRef.current?.focus();
+          setOpen(true);
+        }}
+      >
+        <div className="flex flex-wrap gap-1">
+          {safeValue.map((item) => (
+            <Badge
+              key={item.value}
+              variant="secondary"
+              className="rounded-sm px-1 py-0 text-xs"
+            >
+              {item.label}
+              <button
+                type="button"
+                className="ml-1 rounded-sm text-primary-foreground hover:text-primary-foreground/80"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleUnselect(item);
+                }}
+              >
+                <X className="h-3 w-3" />
+                <span className="sr-only">Remove {item.label}</span>
+              </button>
+            </Badge>
+          ))}
+          <input
+            ref={inputRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
+            placeholder={safeValue.length === 0 ? placeholder : ""}
+            onFocus={() => setOpen(true)}
+            onBlur={() => {
+              // Delay closing to allow click events to process
+              setTimeout(() => {
+                if (document.activeElement !== inputRef.current) {
+                  setInputValue("");
+                }
+              }, 200);
+            }}
+          />
+        </div>
+      </div>
       
-      {open && (
+      {open && filteredOptions.length > 0 && (
         <div 
-          className="relative z-50" 
-          ref={commandRef}
+          className="absolute z-50 w-full mt-1"
+          ref={dropdownRef}
         >
-          <Command 
-            className="absolute top-0 w-full rounded-md border border-input bg-popover shadow-md mt-1 z-50"
-          >
-            <CommandGroup className="max-h-[200px] overflow-auto">
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((option) => {
-                  const isSelected = safeValue.some(
-                    (item) => item.value === option.value
-                  );
-                  return (
-                    <CommandItem
-                      key={option.value}
-                      onSelect={() => handleSelect(option)}
-                      className={`flex items-center ${
-                        isSelected ? "bg-primary/10" : ""
+          <div className="relative rounded-md border border-input bg-popover shadow-md overflow-hidden">
+            <div className="max-h-[200px] overflow-auto p-1">
+              {filteredOptions.map((option) => {
+                const isSelected = safeValue.some(
+                  (item) => item.value === option.value
+                );
+                return (
+                  <div
+                    key={option.value}
+                    onClick={() => handleSelect(option)}
+                    className={`flex items-center gap-2 px-2 py-1.5 text-sm cursor-default select-none rounded-sm ${
+                      isSelected ? "bg-primary/10" : "hover:bg-accent"
+                    }`}
+                  >
+                    <span
+                      className={`mr-2 h-4 w-4 rounded-sm border flex items-center justify-center ${
+                        isSelected
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-muted"
                       }`}
                     >
-                      <span
-                        className={`mr-2 h-4 w-4 rounded-sm border ${
-                          isSelected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-muted"
-                        }`}
-                      >
-                        {isSelected && "✓"}
-                      </span>
-                      {option.label}
-                    </CommandItem>
-                  );
-                })
-              ) : (
-                <div className="py-6 text-center text-sm text-muted-foreground">
-                  No options found.
-                </div>
-              )}
-            </CommandGroup>
-          </Command>
+                      {isSelected && "✓"}
+                    </span>
+                    {option.label}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -50,40 +50,42 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
   }));
   
   useEffect(() => {
-    if (initialProject) {
-      setName(initialProject.name);
-      setDescription(initialProject.description);
-      
-      // Convert member IDs to option objects
-      const memberOptions = (initialProject.members || [])
-        .map(id => {
-          const member = teamMembers.find(m => m.id === id);
-          return member ? {
-            value: id,
-            label: `${member.name} (${member.role})`
-          } : null;
-        })
-        .filter((option): option is Option => option !== null);
-      
-      setSelectedMemberOptions(memberOptions);
-      
-      // Convert client IDs to option objects
-      const clientOptions = (initialProject.clients || [])
-        .map(id => {
-          const client = clients.find(c => c.id === id);
-          return client ? {
-            value: id,
-            label: `${client.name} (${client.company})`
-          } : null;
-        })
-        .filter((option): option is Option => option !== null);
-      
-      setSelectedClientOptions(clientOptions);
-      
-      setStartDate(initialProject.startDate ? new Date(initialProject.startDate) : undefined);
-      setDeadline(initialProject.deadline ? new Date(initialProject.deadline) : undefined);
-    } else {
-      resetForm();
+    if (open) {
+      if (initialProject) {
+        setName(initialProject.name || '');
+        setDescription(initialProject.description || '');
+        
+        // Convert member IDs to option objects
+        const memberOpts = (initialProject.members || [])
+          .map(id => {
+            const member = teamMembers.find(m => m.id === id);
+            return member ? {
+              value: id,
+              label: `${member.name} (${member.role})`
+            } : null;
+          })
+          .filter((option): option is Option => option !== null);
+        
+        setSelectedMemberOptions(memberOpts);
+        
+        // Convert client IDs to option objects
+        const clientOpts = (initialProject.clients || [])
+          .map(id => {
+            const client = clients.find(c => c.id === id);
+            return client ? {
+              value: id,
+              label: `${client.name} (${client.company})`
+            } : null;
+          })
+          .filter((option): option is Option => option !== null);
+        
+        setSelectedClientOptions(clientOpts);
+        
+        setStartDate(initialProject.startDate ? new Date(initialProject.startDate) : undefined);
+        setDeadline(initialProject.deadline ? new Date(initialProject.deadline) : undefined);
+      } else {
+        resetForm();
+      }
     }
   }, [initialProject, open, teamMembers, clients]);
 
