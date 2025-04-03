@@ -20,7 +20,7 @@ type MultiSelectProps = {
 
 export function MultiSelect({
   options,
-  value,
+  value = [], // Provide default empty array to prevent undefined
   onChange,
   placeholder = "Select options",
   className,
@@ -30,21 +30,22 @@ export function MultiSelect({
   const [inputValue, setInputValue] = React.useState("");
 
   const handleUnselect = (option: Option) => {
-    onChange(value.filter((item) => item.value !== option.value));
+    onChange((value || []).filter((item) => item.value !== option.value));
   };
 
   const handleSelect = (selectedOption: Option) => {
-    const isSelected = value.some((item) => item.value === selectedOption.value);
+    const safeValue = value || []; // Defensive check
+    const isSelected = safeValue.some((item) => item.value === selectedOption.value);
     if (isSelected) {
-      onChange(value.filter((item) => item.value !== selectedOption.value));
+      onChange(safeValue.filter((item) => item.value !== selectedOption.value));
     } else {
-      onChange([...value, selectedOption]);
+      onChange([...safeValue, selectedOption]);
     }
     setInputValue("");
   };
 
-  // Filter options based on input value and exclude already selected options
-  const displayOptions = options.filter((option) => {
+  // Filter options based on input value
+  const displayOptions = (options || []).filter((option) => {
     const matchesInput = option.label
       .toLowerCase()
       .includes(inputValue.toLowerCase());
@@ -61,7 +62,7 @@ export function MultiSelect({
         }}
       >
         <div className="flex flex-wrap gap-1">
-          {value.map((item) => (
+          {(value || []).map((item) => (
             <Badge
               key={item.value}
               variant="secondary"
@@ -91,7 +92,7 @@ export function MultiSelect({
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-            placeholder={value.length === 0 ? placeholder : ""}
+            placeholder={(value || []).length === 0 ? placeholder : ""}
             onFocus={() => setOpen(true)}
             onBlur={() => setOpen(false)}
           />
@@ -99,11 +100,11 @@ export function MultiSelect({
       </div>
       <div className="relative">
         {open && (
-          <Command className="absolute top-0 w-full z-10">
+          <Command className="absolute top-0 w-full z-10 bg-popover">
             <CommandGroup className="max-h-[200px] overflow-auto">
               {displayOptions.length > 0 ? (
                 displayOptions.map((option) => {
-                  const isSelected = value.some(
+                  const isSelected = (value || []).some(
                     (item) => item.value === option.value
                   );
                   return (

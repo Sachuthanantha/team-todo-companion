@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { MultiSelect } from '@/components/ui/multi-select';
+import { MultiSelect, Option } from '@/components/ui/multi-select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
@@ -40,6 +40,15 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
     value: member.id,
     label: `${member.name} (${member.role})`
   }));
+
+  // Convert selected member IDs to option objects for MultiSelect
+  const selectedMemberOptions: Option[] = selectedMemberIds.map(id => {
+    const member = teamMembers.find(m => m.id === id);
+    return {
+      value: id,
+      label: member ? `${member.name} (${member.role})` : id
+    };
+  });
 
   useEffect(() => {
     if (initialProject) {
@@ -187,12 +196,7 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
             <div className="space-y-2">
               <Label htmlFor="members">Team Members</Label>
               <MultiSelect
-                value={selectedMemberIds.map(id => ({
-                  value: id,
-                  label: teamMembers.find(m => m.id === id) 
-                    ? `${teamMembers.find(m => m.id === id)?.name} (${teamMembers.find(m => m.id === id)?.role})` 
-                    : id
-                }))}
+                value={selectedMemberOptions}
                 onChange={(newValue) => {
                   setSelectedMemberIds(newValue.map(v => v.value));
                 }}
