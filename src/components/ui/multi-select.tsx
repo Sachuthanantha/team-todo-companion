@@ -19,8 +19,8 @@ type MultiSelectProps = {
 };
 
 export function MultiSelect({
-  options,
-  value = [], // Provide default empty array to prevent undefined
+  options = [],
+  value = [], 
   onChange,
   placeholder = "Select options",
   className,
@@ -34,7 +34,7 @@ export function MultiSelect({
   };
 
   const handleSelect = (selectedOption: Option) => {
-    const safeValue = value || []; // Defensive check
+    const safeValue = value || []; 
     const isSelected = safeValue.some((item) => item.value === selectedOption.value);
     if (isSelected) {
       onChange(safeValue.filter((item) => item.value !== selectedOption.value));
@@ -100,7 +100,7 @@ export function MultiSelect({
       </div>
       <div className="relative">
         {open && (
-          <Command className="absolute top-0 w-full z-10 bg-popover">
+          <Command className="absolute top-0 w-full z-10 bg-popover shadow-md rounded-md border border-border mt-1">
             <CommandGroup className="max-h-[200px] overflow-auto">
               {displayOptions.length > 0 ? (
                 displayOptions.map((option) => {

@@ -27,11 +27,12 @@ interface ProjectDialogProps {
 }
 
 export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDialogProps) => {
-  const { addProject, updateProject, teamMembers } = useApp();
+  const { addProject, updateProject, teamMembers, clients } = useApp();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
   
@@ -49,12 +50,28 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
       label: member ? `${member.name} (${member.role})` : id
     };
   });
+  
+  // Create options array for client selection
+  const clientOptions = clients.map(client => ({
+    value: client.id,
+    label: `${client.name} (${client.company})`
+  }));
+  
+  // Convert selected client IDs to option objects for MultiSelect
+  const selectedClientOptions: Option[] = selectedClientIds.map(id => {
+    const client = clients.find(c => c.id === id);
+    return {
+      value: id,
+      label: client ? `${client.name} (${client.company})` : id
+    };
+  });
 
   useEffect(() => {
     if (initialProject) {
       setName(initialProject.name);
       setDescription(initialProject.description);
       setSelectedMemberIds(initialProject.members || []);
+      setSelectedClientIds(initialProject.clients || []);
       setStartDate(initialProject.startDate ? new Date(initialProject.startDate) : undefined);
       setDeadline(initialProject.deadline ? new Date(initialProject.deadline) : undefined);
     } else {
@@ -66,6 +83,7 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
     setName('');
     setDescription('');
     setSelectedMemberIds([]);
+    setSelectedClientIds([]);
     setStartDate(undefined);
     setDeadline(undefined);
   };
@@ -81,6 +99,7 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
       name,
       description,
       members: selectedMemberIds,
+      clients: selectedClientIds,
       startDate: startDate?.toISOString(),
       deadline: deadline?.toISOString(),
       tasks: initialProject?.tasks || []
@@ -107,8 +126,8 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
             <DialogTitle>{initialProject ? 'Edit Project' : 'Add New Project'}</DialogTitle>
             <DialogDescription>
               {initialProject 
-                ? 'Update project details and team members.' 
-                : 'Create a new project and assign team members to it.'}
+                ? 'Update project details, team members, and clients.' 
+                : 'Create a new project and assign team members and clients to it.'}
             </DialogDescription>
           </DialogHeader>
           
@@ -202,6 +221,18 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
                 }}
                 options={memberOptions}
                 placeholder="Select team members for this project"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="clients">Clients</Label>
+              <MultiSelect
+                value={selectedClientOptions}
+                onChange={(newValue) => {
+                  setSelectedClientIds(newValue.map(v => v.value));
+                }}
+                options={clientOptions}
+                placeholder="Select clients for this project"
               />
             </div>
           </div>

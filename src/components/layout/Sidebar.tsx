@@ -12,7 +12,8 @@ import {
   Menu,
   X,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -126,6 +127,13 @@ export function Sidebar() {
             to="/projects"
             icon={<Briefcase size={isCollapsed ? 20 : 18} />}
             label="Projects"
+            isCollapsed={isCollapsed}
+            onClick={closeMobileSidebar}
+          />
+          <NavItem
+            to="/notes"
+            icon={<FileText size={isCollapsed ? 20 : 18} />}
+            label="Notes"
             isCollapsed={isCollapsed}
             onClick={closeMobileSidebar}
           />

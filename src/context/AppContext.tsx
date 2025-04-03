@@ -37,6 +37,36 @@ export interface Project {
   members?: string[];
   startDate?: string;
   deadline?: string;
+  clients?: string[];
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  company: string;
+  email: string;
+  phone?: string;
+  contactPerson?: string;
+  projects?: string[];
+  notes?: string;
+  avatar?: string;
+}
+
+export interface NoteVersion {
+  content: string;
+  timestamp: string;
+  editedBy: string;
+}
+
+export interface Note {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  editedAt: string;
+  editedBy: string;
+  sharedWith?: string[];
+  versions: NoteVersion[];
 }
 
 export interface Meeting {
@@ -115,6 +145,18 @@ interface AppContextType {
   addProject: (project: Omit<Project, 'id'>) => void;
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
+  
+  // Clients
+  clients: Client[];
+  addClient: (client: Omit<Client, 'id'>) => void;
+  updateClient: (client: Client) => void;
+  deleteClient: (id: string) => void;
+  
+  // Notes
+  notes: Note[];
+  addNote: (note: Omit<Note, 'id'>) => void;
+  updateNote: (note: Note) => void;
+  deleteNote: (id: string) => void;
   
   // Meetings
   meetings: Meeting[];
@@ -212,22 +254,83 @@ const initialTasks: Task[] = [
   }
 ];
 
+const initialClients: Client[] = [
+  {
+    id: 'client1',
+    name: 'Acme Corporation',
+    company: 'Acme Inc.',
+    email: 'contact@acme.com',
+    phone: '+1 123-456-7890',
+    contactPerson: 'John Doe',
+    projects: ['proj1'],
+    notes: 'Key client for the website redesign project.',
+    avatar: 'https://i.pravatar.cc/150?img=4'
+  },
+  {
+    id: 'client2',
+    name: 'TechStart',
+    company: 'TechStart LLC',
+    email: 'info@techstart.com',
+    phone: '+1 987-654-3210',
+    contactPerson: 'Jane Smith',
+    projects: ['proj2'],
+    notes: 'Startup client interested in mobile app development.',
+    avatar: 'https://i.pravatar.cc/150?img=5'
+  }
+];
+
+const initialNotes: Note[] = [
+  {
+    id: 'note1',
+    title: 'Project Kickoff Notes',
+    content: 'We discussed the project timeline and key deliverables for the website redesign. Team members assigned to specific tasks.',
+    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    editedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    editedBy: 'tm1',
+    sharedWith: ['tm2', 'tm3'],
+    versions: []
+  },
+  {
+    id: 'note2',
+    title: 'Client Meeting Summary',
+    content: 'Met with Acme Corp to discuss the project progress. They\'re satisfied with the designs presented so far. Next meeting scheduled for next week.',
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    editedAt: new Date(Date.now() - 86400000 * 1).toISOString(),
+    editedBy: 'tm1',
+    sharedWith: ['tm2'],
+    versions: [
+      {
+        content: 'Met with Acme Corp to discuss the project progress. They requested some minor changes.',
+        timestamp: new Date(Date.now() - 86400000 * 2).toISOString(),
+        editedBy: 'tm1'
+      }
+    ]
+  }
+];
+
 const initialProjects: Project[] = [
   {
     id: 'proj1',
     name: 'Website Redesign',
     description: 'Modernize the company website',
-    tasks: ['task1', 'task3']
+    tasks: ['task1', 'task3'],
+    clients: ['client1'],
+    members: ['tm1', 'tm2'],
+    startDate: new Date(Date.now() - 86400000 * 15).toISOString(),
+    deadline: new Date(Date.now() + 86400000 * 30).toISOString()
   },
   {
     id: 'proj2',
     name: 'Mobile App Development',
     description: 'Create a new mobile application',
-    tasks: ['task2']
+    tasks: ['task2'],
+    clients: ['client2'],
+    members: ['tm2', 'tm3'],
+    startDate: new Date(Date.now() - 86400000 * 5).toISOString(),
+    deadline: new Date(Date.now() + 86400000 * 60).toISOString()
   }
 ];
 
-// Sample meetings
 const initialMeetings: Meeting[] = [
   {
     id: 'meet1',
@@ -259,7 +362,6 @@ const initialMeetings: Meeting[] = [
   }
 ];
 
-// Updated sample conversations with message status
 const initialConversations: Conversation[] = [
   {
     id: 'conv1',
@@ -330,6 +432,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     const savedProjects = localStorage.getItem('projects');
     return savedProjects ? JSON.parse(savedProjects) : initialProjects;
   });
+  const [clients, setClients] = useState<Client[]>(() => {
+    const savedClients = localStorage.getItem('clients');
+    return savedClients ? JSON.parse(savedClients) : initialClients;
+  });
+  const [notes, setNotes] = useState<Note[]>(() => {
+    const savedNotes = localStorage.getItem('notes');
+    return savedNotes ? JSON.parse(savedNotes) : initialNotes;
+  });
   const [conversations, setConversations] = useState<Conversation[]>(() => {
     const savedConversations = localStorage.getItem('conversations');
     return savedConversations ? JSON.parse(savedConversations) : initialConversations;
@@ -346,9 +456,11 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem('tasks', JSON.stringify(tasks));
     localStorage.setItem('teamMembers', JSON.stringify(teamMembers));
     localStorage.setItem('projects', JSON.stringify(projects));
+    localStorage.setItem('clients', JSON.stringify(clients));
+    localStorage.setItem('notes', JSON.stringify(notes));
     localStorage.setItem('conversations', JSON.stringify(conversations));
     localStorage.setItem('meetings', JSON.stringify(meetings));
-  }, [tasks, teamMembers, projects, conversations, meetings]);
+  }, [tasks, teamMembers, projects, clients, notes, conversations, meetings]);
   
   // Update meeting statuses based on current time
   useEffect(() => {
@@ -489,6 +601,53 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const deleteProject = (id: string) => {
     setProjects(prev => prev.filter(p => p.id !== id));
     showSuccessToast('Project deleted successfully');
+  };
+
+  // Client methods
+  const addClient = (client: Omit<Client, 'id'>) => {
+    const newClient: Client = {
+      ...client,
+      id: generateId()
+    };
+    setClients(prev => [...prev, newClient]);
+    showSuccessToast('Client added successfully');
+  };
+  
+  const updateClient = (client: Client) => {
+    setClients(prev => prev.map(c => c.id === client.id ? client : c));
+    showSuccessToast('Client updated successfully');
+  };
+  
+  const deleteClient = (id: string) => {
+    setClients(prev => prev.filter(c => c.id !== id));
+    // Update projects to remove this client
+    setProjects(prev => 
+      prev.map(project => ({
+        ...project,
+        clients: project.clients ? project.clients.filter(clientId => clientId !== id) : undefined
+      }))
+    );
+    showSuccessToast('Client deleted successfully');
+  };
+
+  // Note methods
+  const addNote = (note: Omit<Note, 'id'>) => {
+    const newNote: Note = {
+      ...note,
+      id: generateId()
+    };
+    setNotes(prev => [...prev, newNote]);
+    showSuccessToast('Note added successfully');
+  };
+  
+  const updateNote = (note: Note) => {
+    setNotes(prev => prev.map(n => n.id === note.id ? note : n));
+    showSuccessToast('Note updated successfully');
+  };
+  
+  const deleteNote = (id: string) => {
+    setNotes(prev => prev.filter(n => n.id !== id));
+    showSuccessToast('Note deleted successfully');
   };
 
   // Meeting methods
@@ -791,6 +950,14 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       addProject,
       updateProject,
       deleteProject,
+      clients,
+      addClient,
+      updateClient,
+      deleteClient,
+      notes,
+      addNote,
+      updateNote,
+      deleteNote,
       meetings,
       addMeeting,
       updateMeeting,

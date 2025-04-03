@@ -12,6 +12,7 @@ import Projects from "./pages/Projects";
 import ProjectDetails from "./pages/ProjectDetails";
 import Team from "./pages/Team";
 import Messages from "./pages/Messages";
+import Notes from "./pages/Notes";
 import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,7 @@ const App = () => (
                 <Route path="project/:projectId" element={<ProjectDetails />} />
                 <Route path="team" element={<Team />} />
                 <Route path="messages" element={<Messages />} />
+                <Route path="notes" element={<Notes />} />
                 <Route path="calendar" element={<Calendar />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
