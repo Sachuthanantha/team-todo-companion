@@ -34,6 +34,9 @@ export interface Project {
   name: string;
   description: string;
   tasks: string[];
+  members?: string[];
+  startDate?: string;
+  deadline?: string;
 }
 
 export interface Meeting {

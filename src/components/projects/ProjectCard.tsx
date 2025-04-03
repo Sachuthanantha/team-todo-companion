@@ -1,25 +1,11 @@
 
-import { Project, useApp } from '@/context/AppContext';
+import { Project, TeamMember, useApp } from '@/context/AppContext';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { Link } from 'react-router-dom';
-import { 
-  MoreHorizontal, 
-  CheckSquare, 
-  Users, 
-  ArrowRight,
-  Clock,
-  CheckCircle2
-} from 'lucide-react';
-import { AvatarGroup } from '@/components/ui/avatar-group';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Edit, Calendar, User } from 'lucide-react';
+import { format } from 'date-fns';
 
 interface ProjectCardProps {
   project: Project;
@@ -27,126 +13,100 @@ interface ProjectCardProps {
 }
 
 export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
-  const { deleteProject, getTeamMembersByIds, tasks } = useApp();
-  
-  // Get tasks associated with this project
-  const projectTasks = tasks.filter(task => project.tasks.includes(task.id));
-  
-  // Get unique team members assigned to this project's tasks
-  const uniqueTeamMemberIds = Array.from(
-    new Set(projectTasks.flatMap(task => task.assignedTo))
+  const { teamMembers } = useApp();
+  const projectMembers = teamMembers.filter(member => 
+    project.members && project.members.includes(member.id)
   );
-  const teamMembers = getTeamMembersByIds(uniqueTeamMemberIds);
-  
-  // Calculate task statistics
-  const todoTasks = projectTasks.filter(task => task.status === 'todo');
-  const inProgressTasks = projectTasks.filter(task => task.status === 'inProcess');
-  const completedTasks = projectTasks.filter(task => task.status === 'completed');
-  
-  // Calculate completion percentage
-  const completionPercentage = projectTasks.length > 0 
-    ? Math.round((completedTasks.length / projectTasks.length) * 100) 
-    : 0;
 
-  // Get tasks with high priority
-  const highPriorityTasks = projectTasks.filter(task => task.priority === 'high');
+  // Format dates when they exist
+  const formattedStartDate = project.startDate 
+    ? format(new Date(project.startDate), 'MMM d, yyyy')
+    : 'Not set';
+  
+  const formattedDeadline = project.deadline 
+    ? format(new Date(project.deadline), 'MMM d, yyyy')
+    : 'Not set';
+  
+  // Calculate progress status based on dates
+  const getStatusBadge = () => {
+    if (!project.startDate || !project.deadline) return null;
+    
+    const today = new Date();
+    const start = new Date(project.startDate);
+    const end = new Date(project.deadline);
+    
+    if (today < start) {
+      return <Badge variant="outline">Not Started</Badge>;
+    } else if (today > end) {
+      return <Badge variant="destructive">Overdue</Badge>;
+    } else {
+      return <Badge variant="default">In Progress</Badge>;
+    }
+  };
 
   return (
-    <Card className="overflow-hidden transition-all duration-300 hover:shadow-medium">
-      <CardHeader className="p-6 pb-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-medium text-lg">{project.name}</h3>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal size={16} />
-                <span className="sr-only">Menu</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit(project)}>
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => deleteProject(project.id)}
-                className="text-destructive focus:text-destructive"
-              >
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          {project.description}
-        </p>
-      </CardHeader>
-      <CardContent className="p-6 pt-0">
-        <div className="flex flex-wrap gap-2 mb-4">
-          <Badge variant="outline" className="flex items-center gap-1">
-            <CheckSquare size={12} />
-            <span>{projectTasks.length} tasks</span>
-          </Badge>
-          
-          {highPriorityTasks.length > 0 && (
-            <Badge variant="destructive" className="flex items-center gap-1">
-              <span>{highPriorityTasks.length} high priority</span>
-            </Badge>
-          )}
-          
-          <Badge variant="outline" className="flex items-center gap-1">
-            <CheckCircle2 size={12} className="text-green-500" />
-            <span>{completedTasks.length} completed</span>
-          </Badge>
-          
-          <Badge variant="outline" className="flex items-center gap-1">
-            <Clock size={12} className="text-amber-500" />
-            <span>{inProgressTasks.length} in progress</span>
-          </Badge>
-        </div>
-        
-        {teamMembers.length > 0 && (
-          <div className="mt-4">
-            <div className="flex items-center mb-2">
-              <Users size={14} className="mr-2 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Team Members</span>
-            </div>
-            <AvatarGroup className="mt-1">
-              {teamMembers.map(member => (
-                <Avatar key={member.id} className="border-2 border-background">
-                  <AvatarImage src={member.avatar} alt={member.name} />
-                  <AvatarFallback>
-                    {member.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-              ))}
-            </AvatarGroup>
-          </div>
-        )}
-        
-        {projectTasks.length > 0 && (
-          <div className="mt-4">
-            <div className="flex justify-between text-xs mb-1">
-              <span>Progress</span>
-              <span>{completionPercentage}%</span>
-            </div>
-            <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
-              <div 
-                className="h-full bg-primary rounded-full transition-all duration-700"
-                style={{ width: `${completionPercentage}%` }}
-              />
-            </div>
-          </div>
-        )}
-        
-        <div className="mt-4 pt-4 border-t border-border/50">
-          <Button asChild variant="ghost" className="w-full justify-between">
-            <Link to={`/project/${project.id}`}>
-              <span>View Details</span>
-              <ArrowRight className="h-4 w-4" />
-            </Link>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-xl">{project.name}</CardTitle>
+          <Button variant="ghost" size="icon" onClick={() => onEdit(project)}>
+            <Edit className="h-4 w-4" />
           </Button>
         </div>
+      </CardHeader>
+      <CardContent className="flex-grow">
+        <p className="text-muted-foreground mb-4">
+          {project.description || 'No description provided.'}
+        </p>
+        
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <div className="text-sm">
+              <span className="font-medium">Dates: </span>
+              <span>{formattedStartDate} - {formattedDeadline}</span>
+            </div>
+          </div>
+          
+          {getStatusBadge() && (
+            <div className="flex items-center gap-2">
+              {getStatusBadge()}
+            </div>
+          )}
+          
+          {projectMembers.length > 0 && (
+            <div className="mt-4">
+              <div className="flex items-center gap-2 mb-2">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Team:</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {projectMembers.slice(0, 5).map(member => (
+                  <div key={member.id} className="flex items-center gap-2 text-sm bg-secondary/50 rounded-full px-3 py-1">
+                    <Avatar className="h-5 w-5">
+                      <AvatarImage src={member.avatar} />
+                      <AvatarFallback className="text-xs">
+                        {member.name.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span>{member.name}</span>
+                  </div>
+                ))}
+                {projectMembers.length > 5 && (
+                  <Badge variant="outline">+{projectMembers.length - 5} more</Badge>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </CardContent>
+      <CardFooter className="border-t pt-3">
+        <div className="w-full flex justify-between items-center">
+          <span className="text-xs text-muted-foreground">
+            {projectMembers.length} team member{projectMembers.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+      </CardFooter>
     </Card>
   );
 };

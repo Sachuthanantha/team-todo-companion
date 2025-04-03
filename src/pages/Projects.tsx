@@ -56,7 +56,7 @@ const Projects = () => {
           </div>
         </div>
         <p className="text-muted-foreground">
-          Manage your projects and view the team members assigned to each project.
+          Manage your projects, set deadlines, and assign team members.
         </p>
       </header>
 

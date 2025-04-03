@@ -14,6 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { MultiSelect } from '@/components/ui/multi-select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface ProjectDialogProps {
   open: boolean;
@@ -22,23 +27,27 @@ interface ProjectDialogProps {
 }
 
 export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDialogProps) => {
-  const { addProject, updateProject, tasks } = useApp();
+  const { addProject, updateProject, teamMembers } = useApp();
   
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedTaskIds, setSelectedTaskIds] = useState<string[]>([]);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [deadline, setDeadline] = useState<Date | undefined>(undefined);
   
-  // Create options array for task selection
-  const taskOptions = tasks.map(task => ({
-    value: task.id,
-    label: task.title
+  // Create options array for team member selection
+  const memberOptions = teamMembers.map(member => ({
+    value: member.id,
+    label: `${member.name} (${member.role})`
   }));
 
   useEffect(() => {
     if (initialProject) {
       setName(initialProject.name);
       setDescription(initialProject.description);
-      setSelectedTaskIds(initialProject.tasks);
+      setSelectedMemberIds(initialProject.members || []);
+      setStartDate(initialProject.startDate ? new Date(initialProject.startDate) : undefined);
+      setDeadline(initialProject.deadline ? new Date(initialProject.deadline) : undefined);
     } else {
       resetForm();
     }
@@ -47,7 +56,9 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
   const resetForm = () => {
     setName('');
     setDescription('');
-    setSelectedTaskIds([]);
+    setSelectedMemberIds([]);
+    setStartDate(undefined);
+    setDeadline(undefined);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -60,7 +71,10 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
     const projectData = {
       name,
       description,
-      tasks: selectedTaskIds
+      members: selectedMemberIds,
+      startDate: startDate?.toISOString(),
+      deadline: deadline?.toISOString(),
+      tasks: initialProject?.tasks || []
     };
     
     if (initialProject) {
@@ -84,8 +98,8 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
             <DialogTitle>{initialProject ? 'Edit Project' : 'Add New Project'}</DialogTitle>
             <DialogDescription>
               {initialProject 
-                ? 'Update project details and task assignments.' 
-                : 'Create a new project and assign tasks to it.'}
+                ? 'Update project details and team members.' 
+                : 'Create a new project and assign team members to it.'}
             </DialogDescription>
           </DialogHeader>
           
@@ -112,18 +126,78 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
               />
             </div>
             
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Start Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="startDate"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !startDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? format(startDate, "PPP") : <span>Select date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={setStartDate}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="deadline">Deadline</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      id="deadline"
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !deadline && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {deadline ? format(deadline, "PPP") : <span>Select date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={deadline}
+                      onSelect={setDeadline}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            
             <div className="space-y-2">
-              <Label htmlFor="tasks">Tasks</Label>
+              <Label htmlFor="members">Team Members</Label>
               <MultiSelect
-                value={selectedTaskIds.map(id => ({
+                value={selectedMemberIds.map(id => ({
                   value: id,
-                  label: tasks.find(t => t.id === id)?.title || id
+                  label: teamMembers.find(m => m.id === id) 
+                    ? `${teamMembers.find(m => m.id === id)?.name} (${teamMembers.find(m => m.id === id)?.role})` 
+                    : id
                 }))}
                 onChange={(newValue) => {
-                  setSelectedTaskIds(newValue.map(v => v.value));
+                  setSelectedMemberIds(newValue.map(v => v.value));
                 }}
-                options={taskOptions}
-                placeholder="Select tasks for this project"
+                options={memberOptions}
+                placeholder="Select team members for this project"
               />
             </div>
           </div>
