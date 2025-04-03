@@ -18,8 +18,8 @@ type MultiSelectProps = {
 };
 
 export function MultiSelect({
-  options = [],
-  value = [], 
+  options,
+  value,
   onChange,
   placeholder = "Select options",
   className,
@@ -55,66 +55,79 @@ export function MultiSelect({
     return matchesInput;
   });
 
-  const handleBlur = (e: React.FocusEvent) => {
-    // Only close if the click is not within our components
-    const commandEl = commandRef.current;
-    const relatedTarget = e.relatedTarget as Node;
+  // Handle clicks outside the component to close dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (commandRef.current && !commandRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
     
-    if (!commandEl?.contains(relatedTarget) && e.target !== relatedTarget) {
-      setOpen(false);
-    }
-  };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // The div that handles focus and displays the badges
+  const triggerElement = (
+    <div
+      className={`flex min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${className}`}
+      onClick={() => {
+        inputRef.current?.focus();
+        setOpen(true);
+      }}
+    >
+      <div className="flex flex-wrap gap-1">
+        {safeValue.map((item) => (
+          <Badge
+            key={item.value}
+            variant="secondary"
+            className="rounded-sm px-1 py-0 text-xs"
+          >
+            {item.label}
+            <button
+              type="button"
+              className="ml-1 rounded-sm text-primary-foreground hover:text-primary-foreground/80"
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleUnselect(item);
+              }}
+            >
+              <X className="h-3 w-3" />
+              <span className="sr-only">Remove {item.label}</span>
+            </button>
+          </Badge>
+        ))}
+        <input
+          ref={inputRef}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
+          placeholder={safeValue.length === 0 ? placeholder : ""}
+          onFocus={() => setOpen(true)}
+        />
+      </div>
+    </div>
+  );
 
   return (
     <div className="relative w-full">
-      <div
-        className={`flex min-h-[40px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 ${className}`}
-        onClick={() => {
-          inputRef.current?.focus();
-          setOpen(true);
-        }}
-      >
-        <div className="flex flex-wrap gap-1">
-          {safeValue.map((item) => (
-            <Badge
-              key={item.value}
-              variant="secondary"
-              className="rounded-sm px-1 py-0 text-xs"
-            >
-              {item.label}
-              <button
-                type="button"
-                className="ml-1 rounded-sm text-primary-foreground hover:text-primary-foreground/80"
-                onMouseDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleUnselect(item);
-                }}
-              >
-                <X className="h-3 w-3" />
-                <span className="sr-only">Remove {item.label}</span>
-              </button>
-            </Badge>
-          ))}
-          <input
-            ref={inputRef}
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
-            placeholder={safeValue.length === 0 ? placeholder : ""}
-            onFocus={() => setOpen(true)}
-            onBlur={handleBlur}
-          />
-        </div>
-      </div>
+      {triggerElement}
       
       {open && (
-        <div className="relative z-50" ref={commandRef}>
-          <Command className="absolute top-0 w-full bg-popover shadow-md rounded-md border border-border mt-1 overflow-hidden">
+        <div 
+          className="relative z-50" 
+          ref={commandRef}
+        >
+          <Command 
+            className="absolute top-0 w-full rounded-md border border-input bg-popover shadow-md mt-1 z-50"
+          >
             <CommandGroup className="max-h-[200px] overflow-auto">
               {filteredOptions.length > 0 ? (
                 filteredOptions.map((option) => {

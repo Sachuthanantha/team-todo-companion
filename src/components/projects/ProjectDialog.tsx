@@ -32,8 +32,8 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
-  const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
+  const [selectedMemberOptions, setSelectedMemberOptions] = useState<Option[]>([]);
+  const [selectedClientOptions, setSelectedClientOptions] = useState<Option[]>([]);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
   
@@ -43,52 +43,55 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
     label: `${member.name} (${member.role})`
   }));
 
-  // Convert selected member IDs to option objects for MultiSelect
-  const selectedMemberOptions: Option[] = selectedMemberIds
-    .map(id => {
-      const member = teamMembers.find(m => m.id === id);
-      return member ? {
-        value: id,
-        label: `${member.name} (${member.role})`
-      } : null;
-    })
-    .filter((option): option is Option => option !== null);
-  
   // Create options array for client selection
   const clientOptions: Option[] = clients.map(client => ({
     value: client.id,
     label: `${client.name} (${client.company})`
   }));
   
-  // Convert selected client IDs to option objects for MultiSelect
-  const selectedClientOptions: Option[] = selectedClientIds
-    .map(id => {
-      const client = clients.find(c => c.id === id);
-      return client ? {
-        value: id,
-        label: `${client.name} (${client.company})`
-      } : null;
-    })
-    .filter((option): option is Option => option !== null);
-
   useEffect(() => {
     if (initialProject) {
       setName(initialProject.name);
       setDescription(initialProject.description);
-      setSelectedMemberIds(initialProject.members || []);
-      setSelectedClientIds(initialProject.clients || []);
+      
+      // Convert member IDs to option objects
+      const memberOptions = (initialProject.members || [])
+        .map(id => {
+          const member = teamMembers.find(m => m.id === id);
+          return member ? {
+            value: id,
+            label: `${member.name} (${member.role})`
+          } : null;
+        })
+        .filter((option): option is Option => option !== null);
+      
+      setSelectedMemberOptions(memberOptions);
+      
+      // Convert client IDs to option objects
+      const clientOptions = (initialProject.clients || [])
+        .map(id => {
+          const client = clients.find(c => c.id === id);
+          return client ? {
+            value: id,
+            label: `${client.name} (${client.company})`
+          } : null;
+        })
+        .filter((option): option is Option => option !== null);
+      
+      setSelectedClientOptions(clientOptions);
+      
       setStartDate(initialProject.startDate ? new Date(initialProject.startDate) : undefined);
       setDeadline(initialProject.deadline ? new Date(initialProject.deadline) : undefined);
     } else {
       resetForm();
     }
-  }, [initialProject, open]);
+  }, [initialProject, open, teamMembers, clients]);
 
   const resetForm = () => {
     setName('');
     setDescription('');
-    setSelectedMemberIds([]);
-    setSelectedClientIds([]);
+    setSelectedMemberOptions([]);
+    setSelectedClientOptions([]);
     setStartDate(undefined);
     setDeadline(undefined);
   };
@@ -103,8 +106,8 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
     const projectData = {
       name,
       description,
-      members: selectedMemberIds,
-      clients: selectedClientIds,
+      members: selectedMemberOptions.map(option => option.value),
+      clients: selectedClientOptions.map(option => option.value),
       startDate: startDate?.toISOString(),
       deadline: deadline?.toISOString(),
       tasks: initialProject?.tasks || []
@@ -221,9 +224,7 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
               <Label htmlFor="members">Team Members</Label>
               <MultiSelect
                 value={selectedMemberOptions}
-                onChange={(newValue) => {
-                  setSelectedMemberIds(newValue.map(v => v.value));
-                }}
+                onChange={setSelectedMemberOptions}
                 options={memberOptions}
                 placeholder="Select team members for this project"
               />
@@ -233,9 +234,7 @@ export const ProjectDialog = ({ open, onOpenChange, initialProject }: ProjectDia
               <Label htmlFor="clients">Clients</Label>
               <MultiSelect
                 value={selectedClientOptions}
-                onChange={(newValue) => {
-                  setSelectedClientIds(newValue.map(v => v.value));
-                }}
+                onChange={setSelectedClientOptions}
                 options={clientOptions}
                 placeholder="Select clients for this project"
               />
