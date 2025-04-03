@@ -3,7 +3,6 @@ import * as React from "react";
 import { X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Command, CommandGroup, CommandItem } from "@/components/ui/command";
-import { Command as CommandPrimitive } from "cmdk";
 
 export type Option = {
   value: string;
@@ -94,7 +93,10 @@ export function MultiSelect({
             className="flex-1 bg-transparent outline-none placeholder:text-muted-foreground"
             placeholder={(value || []).length === 0 ? placeholder : ""}
             onFocus={() => setOpen(true)}
-            onBlur={() => setOpen(false)}
+            onBlur={() => {
+              // Delay closing to allow for item selection
+              setTimeout(() => setOpen(false), 200);
+            }}
           />
         </div>
       </div>
