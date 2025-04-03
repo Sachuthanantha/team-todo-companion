@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Video, Calendar, ArrowRight } from 'lucide-react';
+import { Video, Calendar, ArrowRight, Paperclip } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface MessageButtonsProps {
@@ -10,7 +10,7 @@ interface MessageButtonsProps {
   conversationId: string;
 }
 
-export const MessageButtons = ({ onScheduleMeeting, conversationId }: MessageButtonsProps) => {
+export const MessageButtons = ({ onScheduleMeeting, onSendAttachment, conversationId }: MessageButtonsProps) => {
   const navigate = useNavigate();
   
   const handleViewCalendar = () => {
@@ -28,6 +28,13 @@ export const MessageButtons = ({ onScheduleMeeting, conversationId }: MessageBut
         <Calendar className="h-4 w-4 mr-2" />
         View Calendar
       </Button>
+      
+      {onSendAttachment && (
+        <Button variant="outline" size="sm" onClick={onSendAttachment} className="flex-1">
+          <Paperclip className="h-4 w-4 mr-2" />
+          Send Attachment
+        </Button>
+      )}
     </div>
   );
 };

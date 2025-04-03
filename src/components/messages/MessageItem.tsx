@@ -12,6 +12,9 @@ interface MessageItemProps {
 }
 
 export const MessageItem = ({ message, isCurrentUser, sender }: MessageItemProps) => {
+  // Safely check for attachments and ensure it's iterable
+  const hasAttachments = message.attachments && Array.isArray(message.attachments) && message.attachments.length > 0;
+  
   return (
     <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
       <div className={`flex gap-2 max-w-[75%] ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
@@ -19,7 +22,7 @@ export const MessageItem = ({ message, isCurrentUser, sender }: MessageItemProps
           <Avatar className="h-8 w-8">
             <AvatarImage src={sender?.avatar} />
             <AvatarFallback>
-              {sender?.name.substring(0, 2).toUpperCase() || "UN"}
+              {sender?.name ? sender.name.substring(0, 2).toUpperCase() : "UN"}
             </AvatarFallback>
           </Avatar>
         )}
@@ -34,7 +37,7 @@ export const MessageItem = ({ message, isCurrentUser, sender }: MessageItemProps
           >
             <p className="text-sm">{message.content}</p>
             
-            {message.attachments && message.attachments.length > 0 && (
+            {hasAttachments && (
               <div className="mt-2 space-y-1">
                 {message.attachments.map(attachment => (
                   <div key={attachment.id} className="flex items-center p-2 bg-background/60 rounded-md text-xs">

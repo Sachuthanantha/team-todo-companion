@@ -26,10 +26,11 @@ export const TaskColumn = ({
 }: TaskColumnProps) => {
   const { tasks } = useApp();
   
-  // If filtered tasks are provided, use them, otherwise filter all tasks by status
-  const columnTasks = filteredTasks 
-    ? filteredTasks.filter(task => task.status === status)
-    : tasks.filter(task => task.status === status);
+  // Ensure filteredTasks is an array before filtering
+  const tasksToFilter = Array.isArray(filteredTasks) ? filteredTasks : tasks;
+  
+  // Filter tasks by status
+  const columnTasks = tasksToFilter.filter(task => task.status === status);
 
   return (
     <Card className="flex flex-col h-[calc(100vh-16rem)] md:h-[calc(100vh-18rem)] overflow-hidden border border-border dark:border-border/20">
