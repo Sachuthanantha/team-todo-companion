@@ -75,8 +75,8 @@ export const ProjectTeamFields = ({
         <Label htmlFor="project-members">Team Members</Label>
         <MultiSelect
           placeholder="Select team members"
-          selected={selectedMemberOptions}
-          setSelected={setSelectedMemberOptions}
+          value={selectedMemberOptions}
+          onChange={setSelectedMemberOptions}
           options={teamMemberOptions}
           className="w-full"
         />
@@ -86,8 +86,8 @@ export const ProjectTeamFields = ({
         <Label htmlFor="project-clients">Clients</Label>
         <MultiSelect
           placeholder="Select clients"
-          selected={selectedClientOptions}
-          setSelected={setSelectedClientOptions}
+          value={selectedClientOptions}
+          onChange={setSelectedClientOptions}
           options={clientOptions}
           className="w-full mb-2"
         />
