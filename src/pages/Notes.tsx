@@ -1,9 +1,9 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { NoteCard } from "@/components/notes/NoteCard";
-import { NoteDialog } from "@/components/notes/NoteDialog";
+import { useNavigate } from "react-router-dom";
 
 interface Note {
   id: string;
@@ -34,39 +34,22 @@ const defaultNotes: Note[] = [
 ];
 
 export default function Notes() {
-  const [notes, setNotes] = useState<Note[]>(defaultNotes);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentNote, setCurrentNote] = useState<Note | undefined>(undefined);
+  const [notes, setNotes] = useState<Note[]>([]);
+  const navigate = useNavigate();
 
-  const handleOpenNote = (note: Note) => {
-    setCurrentNote(note);
-    setIsDialogOpen(true);
-  };
+  // Load notes from localStorage or use default
+  useEffect(() => {
+    const storedNotes = localStorage.getItem("notes");
+    if (storedNotes) {
+      setNotes(JSON.parse(storedNotes));
+    } else {
+      setNotes(defaultNotes);
+      localStorage.setItem("notes", JSON.stringify(defaultNotes));
+    }
+  }, []);
 
   const handleNewNote = () => {
-    setCurrentNote(undefined);
-    setIsDialogOpen(true);
-  };
-
-  const handleSaveNote = (noteData: Omit<Note, "id" | "date">) => {
-    if (currentNote) {
-      // Edit existing note
-      setNotes(
-        notes.map((note) =>
-          note.id === currentNote.id
-            ? { ...note, ...noteData, date: new Date().toISOString() }
-            : note
-        )
-      );
-    } else {
-      // Add new note
-      const newNote: Note = {
-        id: Date.now().toString(),
-        ...noteData,
-        date: new Date().toISOString(),
-      };
-      setNotes([newNote, ...notes]);
-    }
+    navigate('/notes/new');
   };
 
   return (
@@ -79,25 +62,27 @@ export default function Notes() {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {notes.map((note) => (
-          <NoteCard
-            key={note.id}
-            id={note.id}
-            title={note.title}
-            content={note.content}
-            date={note.date}
-            onClick={() => handleOpenNote(note)}
-          />
-        ))}
-      </div>
-
-      <NoteDialog
-        note={currentNote}
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onSave={handleSaveNote}
-      />
+      {notes.length === 0 ? (
+        <div className="text-center py-10">
+          <p className="text-muted-foreground mb-4">No notes yet. Create your first note!</p>
+          <Button onClick={handleNewNote}>
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Create Note
+          </Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {notes.map((note) => (
+            <NoteCard
+              key={note.id}
+              id={note.id}
+              title={note.title}
+              content={note.content}
+              date={note.date}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

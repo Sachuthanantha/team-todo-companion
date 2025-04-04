@@ -1,20 +1,26 @@
 
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { NoteContentRenderer } from "./NoteContentRenderer";
+import { useNavigate } from "react-router-dom";
 
 interface NoteCardProps {
   id: string;
   title: string;
   content: string;
   date: string;
-  onClick: () => void;
 }
 
-export const NoteCard = ({ title, content, date, onClick }: NoteCardProps) => {
+export const NoteCard = ({ id, title, content, date }: NoteCardProps) => {
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate(`/notes/${id}`);
+  };
+
   return (
     <Card 
       className="cursor-pointer h-full flex flex-col hover:shadow-md transition-shadow"
-      onClick={onClick}
+      onClick={handleClick}
     >
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium line-clamp-1">{title}</CardTitle>

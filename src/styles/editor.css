@@ -4,18 +4,30 @@
   outline: none;
 }
 
+.ProseMirror {
+  padding: 1rem;
+  min-height: 450px;
+}
+
 .ProseMirror p {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .ProseMirror h1 {
+  font-size: 1.75rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  margin-top: 1.25rem;
+}
+
+.ProseMirror h2 {
   font-size: 1.5rem;
   font-weight: bold;
   margin-bottom: 0.75rem;
   margin-top: 1rem;
 }
 
-.ProseMirror h2 {
+.ProseMirror h3 {
   font-size: 1.25rem;
   font-weight: bold;
   margin-bottom: 0.5rem;
@@ -25,7 +37,7 @@
 .ProseMirror ul,
 .ProseMirror ol {
   padding-left: 1.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
 }
 
 .ProseMirror ul {
@@ -45,8 +57,46 @@
 
 .ProseMirror pre {
   background-color: rgba(0, 0, 0, 0.05);
-  padding: 0.5rem;
+  padding: 0.75rem;
   border-radius: 3px;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
   font-family: monospace;
+  overflow-x: auto;
+}
+
+/* Style for dark mode */
+.dark .ProseMirror pre,
+.dark .ProseMirror code {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Improved table styling */
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+  border: 1px solid #ddd;
+  padding: 0.5rem;
+}
+
+.ProseMirror th {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark .ProseMirror th {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Placeholder text */
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
 }

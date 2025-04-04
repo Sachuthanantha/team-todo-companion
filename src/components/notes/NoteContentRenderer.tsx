@@ -14,7 +14,7 @@ export const NoteContentRenderer = ({ content, className }: NoteContentRendererP
 
   return (
     <div 
-      className={cn("prose prose-sm max-w-none", className)}
+      className={cn("prose prose-sm dark:prose-invert max-w-none", className)}
       dangerouslySetInnerHTML={{ __html: content }}
     />
   );
