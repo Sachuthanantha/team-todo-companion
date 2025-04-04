@@ -72,9 +72,8 @@ export const ProjectTeamFields = ({
   return (
     <div className="space-y-4">
       <div>
-        <Label htmlFor="members">Team Members</Label>
+        <Label htmlFor="project-members">Team Members</Label>
         <MultiSelect
-          id="members"
           placeholder="Select team members"
           selected={selectedMemberOptions}
           setSelected={setSelectedMemberOptions}
@@ -84,9 +83,8 @@ export const ProjectTeamFields = ({
       </div>
       
       <div>
-        <Label htmlFor="clients">Clients</Label>
+        <Label htmlFor="project-clients">Clients</Label>
         <MultiSelect
-          id="clients"
           placeholder="Select clients"
           selected={selectedClientOptions}
           setSelected={setSelectedClientOptions}
@@ -96,6 +94,7 @@ export const ProjectTeamFields = ({
         
         <div className="flex gap-2 mt-2">
           <Input
+            id="manual-client-input"
             placeholder="Or type client name manually"
             value={manualClientInput}
             onChange={(e) => setManualClientInput(e.target.value)}
