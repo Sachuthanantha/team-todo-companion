@@ -1,6 +1,9 @@
 
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import Link from '@tiptap/extension-link';
+import Image from '@tiptap/extension-image';
+import Underline from '@tiptap/extension-underline';
 import { Button } from '@/components/ui/button';
 import { 
   Bold, 
@@ -11,15 +14,12 @@ import {
   Heading2, 
   Code,
   Link as LinkIcon,
-  Image,
+  Image as ImageIcon,
   Quote,
-  Underline,
+  Underline as UnderlineIcon,
   Undo,
   Redo
 } from 'lucide-react';
-import LinkExtension from '@tiptap/extension-link';
-import ImageExtension from '@tiptap/extension-image';
-import UnderlineExtension from '@tiptap/extension-underline';
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -40,12 +40,12 @@ export const NoteEditor = ({ content, onChange }: NoteEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      LinkExtension.configure({
+      Link.configure({
         openOnClick: false,
         linkOnPaste: true,
       }),
-      ImageExtension,
-      UnderlineExtension,
+      Image,
+      Underline,
     ],
     content: content || '<p>Start writing your note here...</p>',
     onUpdate: ({ editor }) => {
@@ -108,7 +108,7 @@ export const NoteEditor = ({ content, onChange }: NoteEditorProps) => {
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           className={editor.isActive('underline') ? 'bg-muted' : ''}
         >
-          <Underline className="h-4 w-4" />
+          <UnderlineIcon className="h-4 w-4" />
         </Button>
         
         <Separator orientation="vertical" className="mx-1 h-6" />
@@ -191,7 +191,7 @@ export const NoteEditor = ({ content, onChange }: NoteEditorProps) => {
           size="sm"
           onClick={() => setImageDialogOpen(true)}
         >
-          <Image className="h-4 w-4" />
+          <ImageIcon className="h-4 w-4" />
         </Button>
         
         <Separator orientation="vertical" className="mx-1 h-6" />
