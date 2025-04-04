@@ -50,7 +50,7 @@ export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
           <CardTitle className="text-xl">
-            <Link to={`/projects/${project.id}`} className="hover:text-primary hover:underline transition-colors">
+            <Link to={`/project/${project.id}`} className="hover:text-primary hover:underline transition-colors">
               {project.name}
             </Link>
           </CardTitle>
@@ -106,7 +106,7 @@ export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
         </div>
       </CardContent>
       <CardFooter className="border-t pt-3">
-        <Link to={`/projects/${project.id}`} className="w-full">
+        <Link to={`/project/${project.id}`} className="w-full">
           <Button variant="outline" className="w-full">
             View Details
           </Button>
