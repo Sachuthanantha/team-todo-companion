@@ -17,9 +17,9 @@ import {
   Undo,
   Redo
 } from 'lucide-react';
-import Link from '@tiptap/extension-link';
-import Image as ImageExtension from '@tiptap/extension-image';
-import Underline as UnderlineExtension from '@tiptap/extension-underline';
+import LinkExtension from '@tiptap/extension-link';
+import ImageExtension from '@tiptap/extension-image';
+import UnderlineExtension from '@tiptap/extension-underline';
 import { Separator } from '@/components/ui/separator';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -40,7 +40,7 @@ export const NoteEditor = ({ content, onChange }: NoteEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Link.configure({
+      LinkExtension.configure({
         openOnClick: false,
         linkOnPaste: true,
       }),
