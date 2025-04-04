@@ -74,7 +74,11 @@ export const NoteEditor = ({ content, onChange }: NoteEditorProps) => {
 
   const addImage = () => {
     if (imageUrl) {
-      editor.chain().focus().setImage({ src: imageUrl }).run();
+      // Use the correct command for the Image extension
+      editor.chain().focus().insertContent({
+        type: 'image',
+        attrs: { src: imageUrl }
+      }).run();
     }
     setImageDialogOpen(false);
     setImageUrl('');
