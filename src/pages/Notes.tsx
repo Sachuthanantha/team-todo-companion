@@ -1,137 +1,103 @@
 
-import { useState } from 'react';
-import { Note, useApp } from '@/context/AppContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { NoteCard } from '@/components/notes/NoteCard';
-import { NoteDialog } from '@/components/notes/NoteDialog';
-import { FileText, Plus, Search } from 'lucide-react';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { PlusIcon } from "lucide-react";
+import { NoteCard } from "@/components/notes/NoteCard";
+import { NoteDialog } from "@/components/notes/NoteDialog";
 
-const Notes = () => {
-  const { notes } = useApp();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [noteDialogOpen, setNoteDialogOpen] = useState(false);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  
-  const filteredNotes = notes.filter(note => 
-    note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-  
-  const myNotes = filteredNotes.filter(note => note.editedBy === 'tm1'); // Assuming current user is the first team member
-  const sharedNotes = filteredNotes.filter(note => 
-    note.editedBy !== 'tm1' && (note.sharedWith?.includes('tm1') || false)
-  );
+interface Note {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+}
 
-  const handleAddNote = () => {
-    setSelectedNote(null);
-    setNoteDialogOpen(true);
+const defaultNotes: Note[] = [
+  {
+    id: "1",
+    title: "Meeting Notes",
+    content: "<h2>Project Kickoff</h2><p>Discussed timeline and initial requirements.</p><ul><li>Set up weekly check-ins</li><li>Define MVP by next week</li></ul>",
+    date: "2023-03-15",
+  },
+  {
+    id: "2",
+    title: "Ideas for New Features",
+    content: "<p>Brainstorming session results:</p><ol><li>User dashboard improvements</li><li>Integration with calendar</li><li>Mobile app features</li></ol>",
+    date: "2023-03-20",
+  },
+  {
+    id: "3",
+    title: "Research Notes",
+    content: "<h2>Competitor Analysis</h2><p>Looking at similar products in the market:</p><ul><li>Product A - Good UI but limited features</li><li>Product B - Comprehensive but complex</li></ul>",
+    date: "2023-04-05",
+  },
+];
+
+export default function Notes() {
+  const [notes, setNotes] = useState<Note[]>(defaultNotes);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentNote, setCurrentNote] = useState<Note | undefined>(undefined);
+
+  const handleOpenNote = (note: Note) => {
+    setCurrentNote(note);
+    setIsDialogOpen(true);
   };
 
-  const handleEditNote = (note: Note) => {
-    setSelectedNote(note);
-    setNoteDialogOpen(true);
+  const handleNewNote = () => {
+    setCurrentNote(undefined);
+    setIsDialogOpen(true);
+  };
+
+  const handleSaveNote = (noteData: Omit<Note, "id" | "date">) => {
+    if (currentNote) {
+      // Edit existing note
+      setNotes(
+        notes.map((note) =>
+          note.id === currentNote.id
+            ? { ...note, ...noteData, date: new Date().toISOString() }
+            : note
+        )
+      );
+    } else {
+      // Add new note
+      const newNote: Note = {
+        id: Date.now().toString(),
+        ...noteData,
+        date: new Date().toISOString(),
+      };
+      setNotes([newNote, ...notes]);
+    }
   };
 
   return (
-    <div className="animate-fade-in space-y-8">
-      <header>
-        <h1 className="text-3xl font-semibold">Notes</h1>
-        <p className="text-muted-foreground">Create and manage your notes, optionally share them with your team</p>
-      </header>
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search notes..."
-            className="w-full pl-9"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <Button onClick={handleAddNote}>
-          <Plus className="h-4 w-4 mr-2" />
+    <div className="container mx-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Notes</h1>
+        <Button onClick={handleNewNote}>
+          <PlusIcon className="h-4 w-4 mr-2" />
           New Note
         </Button>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList>
-          <TabsTrigger value="all">All Notes ({filteredNotes.length})</TabsTrigger>
-          <TabsTrigger value="my">My Notes ({myNotes.length})</TabsTrigger>
-          <TabsTrigger value="shared">Shared with me ({sharedNotes.length})</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="mt-6">
-          {filteredNotes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredNotes.map(note => (
-                <NoteCard key={note.id} note={note} onEdit={handleEditNote} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 bg-secondary/50 rounded-lg">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-              {searchTerm ? (
-                <p className="text-muted-foreground mb-4">No notes found matching "{searchTerm}"</p>
-              ) : (
-                <>
-                  <p className="text-muted-foreground mb-4">No notes yet</p>
-                  <Button onClick={handleAddNote}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create your first note
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="my" className="mt-6">
-          {myNotes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {myNotes.map(note => (
-                <NoteCard key={note.id} note={note} onEdit={handleEditNote} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 bg-secondary/50 rounded-lg">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-              <p className="text-muted-foreground mb-4">You haven't created any notes yet</p>
-              <Button onClick={handleAddNote}>
-                <Plus className="h-4 w-4 mr-2" />
-                Create your first note
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="shared" className="mt-6">
-          {sharedNotes.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {sharedNotes.map(note => (
-                <NoteCard key={note.id} note={note} onEdit={handleEditNote} />
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-12 bg-secondary/50 rounded-lg">
-              <FileText className="h-12 w-12 text-muted-foreground mb-4 opacity-50" />
-              <p className="text-muted-foreground mb-4">No notes have been shared with you</p>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {notes.map((note) => (
+          <NoteCard
+            key={note.id}
+            id={note.id}
+            title={note.title}
+            content={note.content}
+            date={note.date}
+            onClick={() => handleOpenNote(note)}
+          />
+        ))}
+      </div>
 
       <NoteDialog
-        open={noteDialogOpen}
-        onOpenChange={setNoteDialogOpen}
-        initialNote={selectedNote}
+        note={currentNote}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSave={handleSaveNote}
       />
     </div>
   );
-};
-
-export default Notes;
+}
