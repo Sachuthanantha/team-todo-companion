@@ -13,13 +13,14 @@ interface ProjectDialogFormProps {
 }
 
 export const ProjectDialogForm = ({ initialProject, onOpenChange }: ProjectDialogFormProps) => {
-  const { addProject, updateProject } = useApp();
+  const { addProject, updateProject, clients } = useApp();
   
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [selectedMemberOptions, setSelectedMemberOptions] = useState<{value: string; label: string}[]>([]);
   const [selectedClientOptions, setSelectedClientOptions] = useState<{value: string; label: string}[]>([]);
+  const [manualClientInput, setManualClientInput] = useState('');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [deadline, setDeadline] = useState<Date | undefined>(undefined);
   
@@ -27,17 +28,39 @@ export const ProjectDialogForm = ({ initialProject, onOpenChange }: ProjectDialo
     if (initialProject) {
       setName(initialProject.name || '');
       setDescription(initialProject.description || '');
-      // Team member and client options will be handled in their respective components
+      
+      // Set the client options
+      if (initialProject.clients && initialProject.clients.length > 0) {
+        const clientOptions = initialProject.clients.map(clientId => {
+          const foundClient = clients.find(c => c.id === clientId);
+          return {
+            value: clientId,
+            label: foundClient ? foundClient.name : clientId
+          };
+        });
+        setSelectedClientOptions(clientOptions);
+      } else {
+        setSelectedClientOptions([]);
+      }
+      
+      // Set date values
+      if (initialProject.startDate) {
+        setStartDate(new Date(initialProject.startDate));
+      }
+      if (initialProject.deadline) {
+        setDeadline(new Date(initialProject.deadline));
+      }
     } else {
       resetForm();
     }
-  }, [initialProject]);
+  }, [initialProject, clients]);
 
   const resetForm = () => {
     setName('');
     setDescription('');
     setSelectedMemberOptions([]);
     setSelectedClientOptions([]);
+    setManualClientInput('');
     setStartDate(undefined);
     setDeadline(undefined);
   };
@@ -49,11 +72,23 @@ export const ProjectDialogForm = ({ initialProject, onOpenChange }: ProjectDialo
       return;
     }
     
+    // Process manual client input if any
+    let finalClientOptions = [...selectedClientOptions];
+    
+    if (manualClientInput.trim()) {
+      // Generate a temporary ID for the manual client input
+      const manualClientId = `manual-client-${Date.now()}`;
+      finalClientOptions.push({
+        value: manualClientId,
+        label: manualClientInput
+      });
+    }
+    
     const projectData = {
       name,
       description,
       members: selectedMemberOptions.map(option => option.value),
-      clients: selectedClientOptions.map(option => option.value),
+      clients: finalClientOptions.map(option => option.value),
       startDate: startDate?.toISOString(),
       deadline: deadline?.toISOString(),
       tasks: initialProject?.tasks || []
@@ -70,6 +105,21 @@ export const ProjectDialogForm = ({ initialProject, onOpenChange }: ProjectDialo
     
     onOpenChange(false);
     resetForm();
+  };
+
+  const handleManualClientAdd = () => {
+    if (manualClientInput.trim()) {
+      // Generate a temporary ID for the manual client
+      const manualClientId = `manual-client-${Date.now()}`;
+      setSelectedClientOptions([
+        ...selectedClientOptions, 
+        {
+          value: manualClientId,
+          label: manualClientInput
+        }
+      ]);
+      setManualClientInput('');
+    }
   };
 
   return (
@@ -94,6 +144,9 @@ export const ProjectDialogForm = ({ initialProject, onOpenChange }: ProjectDialo
           setSelectedMemberOptions={setSelectedMemberOptions}
           selectedClientOptions={selectedClientOptions}
           setSelectedClientOptions={setSelectedClientOptions}
+          manualClientInput={manualClientInput}
+          setManualClientInput={setManualClientInput}
+          onAddManualClient={handleManualClientAdd}
           initialProject={initialProject}
         />
       </div>

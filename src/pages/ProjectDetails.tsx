@@ -12,17 +12,20 @@ import {
   Pencil,
   MoreHorizontal,
   Trash2,
-  Search
+  Search,
+  ClipboardList,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { TaskDialog } from '@/components/tasks/TaskDialog';
-import { format, formatDistanceToNow } from 'date-fns';
+import { TaskColumn } from '@/components/tasks/TaskColumn';
+import { format } from 'date-fns';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -40,7 +43,8 @@ const ProjectDetails = () => {
     tasks, 
     teamMembers, 
     getTeamMembersByIds,
-    deleteProject
+    deleteProject,
+    clients
   } = useApp();
   
   const [project, setProject] = useState<Project | null>(null);
@@ -52,6 +56,8 @@ const ProjectDetails = () => {
   const [editProjectDialogOpen, setEditProjectDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'board' | 'list'>('board');
+  const [projectClients, setProjectClients] = useState<any[]>([]);
   
   useEffect(() => {
     if (projectId) {
@@ -69,9 +75,19 @@ const ProjectDetails = () => {
           new Set(projectTasksList.flatMap(task => task.assignedTo))
         );
         setTeamMembersOnProject(getTeamMembersByIds(uniqueTeamMemberIds));
+        
+        // Get clients for this project
+        if (foundProject.clients && foundProject.clients.length > 0) {
+          const projectClientList = clients.filter(client => 
+            foundProject.clients?.includes(client.id)
+          );
+          setProjectClients(projectClientList);
+        } else {
+          setProjectClients([]);
+        }
       }
     }
-  }, [projectId, projects, tasks, getTeamMembersByIds]);
+  }, [projectId, projects, tasks, clients, getTeamMembersByIds]);
   
   // Filter tasks based on search term
   useEffect(() => {
@@ -237,33 +253,102 @@ const ProjectDetails = () => {
         </Card>
       </div>
       
-      {/* Team Members */}
-      {teamMembersOnProject.length > 0 && (
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-4 flex items-center">
-            <Users className="h-5 w-5 mr-2 text-primary" />
-            Team Members
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            {teamMembersOnProject.map(member => (
-              <div key={member.id} className="flex items-center p-3 bg-card rounded-lg border">
-                <Avatar className="h-10 w-10 mr-3">
-                  <AvatarImage src={member.avatar} alt={member.name} />
-                  <AvatarFallback>
-                    {member.name.split(' ').map(n => n[0]).join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="font-medium">{member.name}</div>
-                  <div className="text-sm text-muted-foreground">{member.role}</div>
-                </div>
+      {/* Project Details */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* Dates */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <Calendar className="h-5 w-5 mr-2 text-primary" />
+              Timeline
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <div>
+              <div className="text-sm font-medium text-muted-foreground">Start Date</div>
+              <div className="font-medium">
+                {project.startDate 
+                  ? format(new Date(project.startDate), 'MMMM d, yyyy') 
+                  : 'Not set'}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
+            <div>
+              <div className="text-sm font-medium text-muted-foreground">End Date</div>
+              <div className="font-medium">
+                {project.deadline 
+                  ? format(new Date(project.deadline), 'MMMM d, yyyy')
+                  : 'Not set'}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Team */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <Users className="h-5 w-5 mr-2 text-primary" />
+              Team
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {teamMembersOnProject.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {teamMembersOnProject.map(member => (
+                  <div key={member.id} className="flex items-center p-2 bg-card rounded-lg border">
+                    <Avatar className="h-8 w-8 mr-2">
+                      <AvatarImage src={member.avatar} alt={member.name} />
+                      <AvatarFallback>
+                        {member.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">{member.name}</div>
+                      <div className="text-xs text-muted-foreground">{member.role}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-muted-foreground">No team members assigned</div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Clients */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <Users className="h-5 w-5 mr-2 text-primary" />
+              Clients
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {projectClients.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {projectClients.map(client => (
+                  <div key={client.id} className="flex items-center p-2 bg-card rounded-lg border">
+                    <Avatar className="h-8 w-8 mr-2">
+                      <AvatarImage src={client.avatar} alt={client.name} />
+                      <AvatarFallback>
+                        {client.name.split(' ').map(n => n[0]).join('')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <div className="font-medium">{client.name}</div>
+                      <div className="text-xs text-muted-foreground">{client.company}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-muted-foreground">No clients assigned</div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
       
-      {/* Tasks */}
+      {/* Tasks Section */}
       <div>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
           <h2 className="text-xl font-semibold flex items-center">
@@ -283,22 +368,65 @@ const ProjectDetails = () => {
               />
             </div>
             
-            <Button onClick={handleAddTask}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Task
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant={viewMode === 'board' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setViewMode('board')}
+              >
+                Board View
+              </Button>
+              <Button 
+                variant={viewMode === 'list' ? 'default' : 'outline'} 
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                List View
+              </Button>
+              <Button onClick={handleAddTask}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Task
+              </Button>
+            </div>
           </div>
         </div>
         
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="mb-4">
-            <TabsTrigger value="all">All Tasks ({filteredTasks.length})</TabsTrigger>
-            <TabsTrigger value="todo">To Do ({todoTasks.length})</TabsTrigger>
-            <TabsTrigger value="inProcess">In Progress ({inProgressTasks.length})</TabsTrigger>
-            <TabsTrigger value="completed">Completed ({completedTasks.length})</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all">
+        {/* Board View */}
+        {viewMode === 'board' && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <TaskColumn
+              title="To Do"
+              status="todo"
+              emptyMessage="No tasks to do yet"
+              icon={<ClipboardList className="h-5 w-5 text-muted-foreground" />}
+              onAddTask={handleAddTask}
+              onEditTask={handleEditTask}
+              filteredTasks={filteredTasks}
+            />
+            <TaskColumn
+              title="In Progress"
+              status="inProcess"
+              emptyMessage="No tasks in progress"
+              icon={<Clock className="h-5 w-5 text-muted-foreground" />}
+              onAddTask={handleAddTask}
+              onEditTask={handleEditTask}
+              filteredTasks={filteredTasks}
+            />
+            <TaskColumn
+              title="Completed"
+              status="completed"
+              emptyMessage="No completed tasks yet"
+              icon={<CheckCircle2 className="h-5 w-5 text-muted-foreground" />}
+              onAddTask={handleAddTask}
+              onEditTask={handleEditTask}
+              filteredTasks={filteredTasks}
+            />
+          </div>
+        )}
+        
+        {/* List View */}
+        {viewMode === 'list' && (
+          <>
             {filteredTasks.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {filteredTasks.map(task => (
@@ -327,50 +455,8 @@ const ProjectDetails = () => {
                 )}
               </div>
             )}
-          </TabsContent>
-          
-          <TabsContent value="todo">
-            {todoTasks.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {todoTasks.map(task => (
-                  <TaskCard key={task.id} task={task} onEdit={handleEditTask} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 bg-secondary/50 rounded-lg">
-                <p className="text-muted-foreground">No tasks to do</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="inProcess">
-            {inProgressTasks.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {inProgressTasks.map(task => (
-                  <TaskCard key={task.id} task={task} onEdit={handleEditTask} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 bg-secondary/50 rounded-lg">
-                <p className="text-muted-foreground">No tasks in progress</p>
-              </div>
-            )}
-          </TabsContent>
-          
-          <TabsContent value="completed">
-            {completedTasks.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {completedTasks.map(task => (
-                  <TaskCard key={task.id} task={task} onEdit={handleEditTask} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 bg-secondary/50 rounded-lg">
-                <p className="text-muted-foreground">No completed tasks</p>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+          </>
+        )}
       </div>
       
       {/* Task Dialog */}

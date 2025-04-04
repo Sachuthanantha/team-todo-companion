@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Calendar, User } from 'lucide-react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 interface ProjectCardProps {
   project: Project;
@@ -45,10 +46,14 @@ export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
   };
 
   return (
-    <Card className="h-full flex flex-col">
+    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-xl">{project.name}</CardTitle>
+          <CardTitle className="text-xl">
+            <Link to={`/projects/${project.id}`} className="hover:text-primary hover:underline transition-colors">
+              {project.name}
+            </Link>
+          </CardTitle>
           <Button variant="ghost" size="icon" onClick={() => onEdit(project)}>
             <Edit className="h-4 w-4" />
           </Button>
@@ -101,11 +106,11 @@ export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
         </div>
       </CardContent>
       <CardFooter className="border-t pt-3">
-        <div className="w-full flex justify-between items-center">
-          <span className="text-xs text-muted-foreground">
-            {projectMembers.length} team member{projectMembers.length !== 1 ? 's' : ''}
-          </span>
-        </div>
+        <Link to={`/projects/${project.id}`} className="w-full">
+          <Button variant="outline" className="w-full">
+            View Details
+          </Button>
+        </Link>
       </CardFooter>
     </Card>
   );

@@ -1,93 +1,120 @@
 
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Project, useApp } from '@/context/AppContext';
 import { Label } from '@/components/ui/label';
-import { MultiSelect, Option } from '@/components/ui/multi-select';
-import { useApp } from '@/context/AppContext';
-import type { Project } from '@/context/AppContext';
+import { MultiSelect } from '@/components/ui/multi-select';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 
 interface ProjectTeamFieldsProps {
-  selectedMemberOptions: Option[];
-  setSelectedMemberOptions: (options: Option[]) => void;
-  selectedClientOptions: Option[];
-  setSelectedClientOptions: (options: Option[]) => void;
+  selectedMemberOptions: { value: string; label: string }[];
+  setSelectedMemberOptions: (options: { value: string; label: string }[]) => void;
+  selectedClientOptions: { value: string; label: string }[];
+  setSelectedClientOptions: (options: { value: string; label: string }[]) => void;
+  manualClientInput?: string;
+  setManualClientInput?: (value: string) => void;
+  onAddManualClient?: () => void;
   initialProject: Project | null;
 }
 
-export const ProjectTeamFields = ({ 
-  selectedMemberOptions, 
+export const ProjectTeamFields = ({
+  selectedMemberOptions,
   setSelectedMemberOptions,
   selectedClientOptions,
   setSelectedClientOptions,
+  manualClientInput = '',
+  setManualClientInput = () => {},
+  onAddManualClient = () => {},
   initialProject
 }: ProjectTeamFieldsProps) => {
   const { teamMembers, clients } = useApp();
+  const [teamMemberOptions, setTeamMemberOptions] = useState<{ value: string; label: string }[]>([]);
+  const [clientOptions, setClientOptions] = useState<{ value: string; label: string }[]>([]);
   
-  // Create options array for team member selection
-  const memberOptions: Option[] = teamMembers.map(member => ({
-    value: member.id,
-    label: `${member.name} (${member.role})`
-  }));
-
-  // Create options array for client selection
-  const clientOptions: Option[] = clients.map(client => ({
-    value: client.id,
-    label: `${client.name} (${client.company})`
-  }));
-  
+  // Prepare team member options
   useEffect(() => {
-    if (initialProject) {
-      // Convert member IDs to option objects
-      const memberOpts = (initialProject.members || [])
-        .map(id => {
-          const member = teamMembers.find(m => m.id === id);
-          return member ? {
-            value: id,
-            label: `${member.name} (${member.role})`
-          } : null;
-        })
-        .filter((option): option is Option => option !== null);
+    const memberOptions = teamMembers.map(member => ({
+      value: member.id,
+      label: member.name
+    }));
+    setTeamMemberOptions(memberOptions);
+    
+    // Set initial selected members if editing a project
+    if (initialProject?.members?.length) {
+      const initialSelectedMembers = teamMembers
+        .filter(member => initialProject.members?.includes(member.id))
+        .map(member => ({
+          value: member.id,
+          label: member.name
+        }));
       
-      setSelectedMemberOptions(memberOpts);
-      
-      // Convert client IDs to option objects
-      const clientOpts = (initialProject.clients || [])
-        .map(id => {
-          const client = clients.find(c => c.id === id);
-          return client ? {
-            value: id,
-            label: `${client.name} (${client.company})`
-          } : null;
-        })
-        .filter((option): option is Option => option !== null);
-      
-      setSelectedClientOptions(clientOpts);
-    } else {
-      setSelectedMemberOptions([]);
-      setSelectedClientOptions([]);
+      setSelectedMemberOptions(initialSelectedMembers);
     }
-  }, [initialProject, teamMembers, clients, setSelectedMemberOptions, setSelectedClientOptions]);
+  }, [initialProject, teamMembers]);
+  
+  // Prepare client options
+  useEffect(() => {
+    const clientOpts = clients.map(client => ({
+      value: client.id,
+      label: client.name
+    }));
+    setClientOptions(clientOpts);
+  }, [clients]);
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && manualClientInput.trim()) {
+      e.preventDefault();
+      onAddManualClient();
+    }
+  };
 
   return (
-    <>
-      <div className="space-y-2">
+    <div className="space-y-4">
+      <div>
         <Label htmlFor="members">Team Members</Label>
         <MultiSelect
-          value={selectedMemberOptions}
-          onChange={setSelectedMemberOptions}
-          options={memberOptions}
-          placeholder="Select team members for this project"
+          id="members"
+          placeholder="Select team members"
+          selected={selectedMemberOptions}
+          setSelected={setSelectedMemberOptions}
+          options={teamMemberOptions}
+          className="w-full"
         />
       </div>
       
-      <div className="space-y-2">
+      <div>
         <Label htmlFor="clients">Clients</Label>
         <MultiSelect
-          value={selectedClientOptions}
-          onChange={setSelectedClientOptions}
+          id="clients"
+          placeholder="Select clients"
+          selected={selectedClientOptions}
+          setSelected={setSelectedClientOptions}
           options={clientOptions}
-          placeholder="Select clients for this project"
+          className="w-full mb-2"
         />
+        
+        <div className="flex gap-2 mt-2">
+          <Input
+            placeholder="Or type client name manually"
+            value={manualClientInput}
+            onChange={(e) => setManualClientInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+          />
+          <Button 
+            type="button" 
+            variant="outline"
+            onClick={onAddManualClient}
+            disabled={!manualClientInput.trim()}
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add
+          </Button>
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">
+          Press Enter or click Add to add a manual client
+        </div>
       </div>
-    </>
+    </div>
   );
 };
