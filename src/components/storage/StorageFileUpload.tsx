@@ -14,13 +14,15 @@ export interface StorageFile {
   type: string;
   uploadDate: string;
   data: string;
+  parentId: string | null;
 }
 
 interface StorageFileUploadProps {
   onUpload: (files: StorageFile[]) => void;
+  currentFolderId: string | null;
 }
 
-export const StorageFileUpload = ({ onUpload }: StorageFileUploadProps) => {
+export const StorageFileUpload = ({ onUpload, currentFolderId }: StorageFileUploadProps) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -65,7 +67,8 @@ export const StorageFileUpload = ({ onUpload }: StorageFileUploadProps) => {
               size: file.size,
               type: file.type,
               uploadDate: new Date().toISOString(),
-              data: reader.result as string
+              data: reader.result as string,
+              parentId: currentFolderId,
             };
             resolve(fileData);
           };
