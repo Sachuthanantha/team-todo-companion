@@ -13,7 +13,8 @@ import {
   X,
   Briefcase,
   MessageSquare,
-  FileText
+  FileText,
+  HardDrive
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -155,6 +156,13 @@ export function Sidebar() {
             to="/calendar"
             icon={<CalendarClock size={isCollapsed ? 20 : 18} />}
             label="Calendar"
+            isCollapsed={isCollapsed}
+            onClick={closeMobileSidebar}
+          />
+          <NavItem
+            to="/storage"
+            icon={<HardDrive size={isCollapsed ? 20 : 18} />}
+            label="Storage"
             isCollapsed={isCollapsed}
             onClick={closeMobileSidebar}
           />

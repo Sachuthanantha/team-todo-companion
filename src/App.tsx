@@ -18,6 +18,7 @@ import Calendar from "./pages/Calendar";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import { AppProvider } from "./context/AppContext";
+import Storage from "./pages/Storage";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
                 <Route path="notes" element={<Notes />} />
                 <Route path="notes/:noteId" element={<NoteDetail />} />
                 <Route path="calendar" element={<Calendar />} />
+                <Route path="storage" element={<Storage />} />
                 <Route path="settings" element={<Settings />} />
               </Route>
               <Route path="*" element={<NotFound />} />
