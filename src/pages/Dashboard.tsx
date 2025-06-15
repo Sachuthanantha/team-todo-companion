@@ -24,7 +24,6 @@ import { TaskCard } from '@/components/tasks/TaskCard';
 import { TaskDialog } from '@/components/tasks/TaskDialog';
 import { MeetingCard } from '@/components/meetings/MeetingCard';
 import { MeetingDialog } from '@/components/meetings/MeetingDialog';
-import { CheckInButton } from '@/components/dashboard/CheckInButton';
 import { format, differenceInMinutes } from 'date-fns';
 import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
@@ -113,14 +112,11 @@ const Dashboard = () => {
   return (
     <div className="animate-fade-in">
       <header className="mb-8">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center">
-            <div className="bg-primary/10 p-2 rounded-md mr-3">
-              <LayoutDashboard className="h-5 w-5 text-primary" />
-            </div>
-            <h1 className="text-3xl font-semibold">Dashboard</h1>
+        <div className="flex items-center mb-2">
+          <div className="bg-primary/10 p-2 rounded-md mr-3">
+            <LayoutDashboard className="h-5 w-5 text-primary" />
           </div>
-          <CheckInButton />
+          <h1 className="text-3xl font-semibold">Dashboard</h1>
         </div>
         <p className="text-muted-foreground">
           Welcome to your workspace. Here's an overview of your tasks and team progress.
