@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Task, useApp } from '@/context/AppContext';
 import { useNavigate } from 'react-router-dom';
@@ -84,6 +85,10 @@ export const TaskDialog = ({
 
   useEffect(() => {
     if (initialTask) {
+      // Find which project this task belongs to
+      const taskProject = projects.find(p => p.tasks.includes(initialTask.id));
+      const taskProjectId = taskProject?.id || '';
+      
       form.reset({
         title: initialTask.title,
         description: initialTask.description,
@@ -91,9 +96,9 @@ export const TaskDialog = ({
         status: initialTask.status,
         dueDate: initialTask.dueDate || '',
         assignedTo: initialTask.assignedTo,
-        projectId: initialTask.projectId || '',
+        projectId: taskProjectId,
       });
-      setSelectedProject(initialTask.projectId || '');
+      setSelectedProject(taskProjectId);
     } else {
       form.reset({
         title: '',
@@ -106,19 +111,27 @@ export const TaskDialog = ({
       });
       setSelectedProject(defaultProjectId);
     }
-  }, [initialTask, form, defaultProjectId]);
+  }, [initialTask, form, defaultProjectId, projects]);
 
   const onSubmit = (data: TaskFormData) => {
     if (initialTask) {
       updateTask({
         ...initialTask,
-        ...data,
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        status: data.status,
         dueDate: data.dueDate || null,
+        assignedTo: data.assignedTo,
       });
     } else {
       addTask({
-        ...data,
+        title: data.title,
+        description: data.description,
+        priority: data.priority,
+        status: data.status,
         dueDate: data.dueDate || null,
+        assignedTo: data.assignedTo,
       });
     }
     onOpenChange(false);
@@ -292,7 +305,7 @@ export const TaskDialog = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">No Project</SelectItem>
+                        <SelectItem value="no-project">No Project</SelectItem>
                         {projects.map((project) => (
                           <SelectItem key={project.id} value={project.id}>
                             {project.name}
@@ -330,8 +343,13 @@ export const TaskDialog = ({
                       label: member.name,
                       value: member.id,
                     }))}
-                    value={field.value}
-                    onChange={field.onChange}
+                    value={field.value.map(id => ({ 
+                      label: teamMembers.find(m => m.id === id)?.name || id, 
+                      value: id 
+                    }))}
+                    onChange={(selectedOptions) => {
+                      field.onChange(selectedOptions.map(option => option.value));
+                    }}
                   />
                   <FormMessage />
                 </FormItem>
