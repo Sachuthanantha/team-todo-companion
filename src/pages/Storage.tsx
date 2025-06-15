@@ -77,18 +77,28 @@ const Storage = () => {
                             <p className="text-sm">Create a folder or upload a file to get started.</p>
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                             {folders.map(folder => (
-                                <div key={folder.id} className="flex items-center p-3 rounded-lg border hover:bg-accent hover:border-primary cursor-pointer transition-colors">
-                                    <Folder className="mr-3 h-6 w-6 text-primary" />
-                                    <span className="font-medium truncate">{folder.name}</span>
+                                <div key={folder.id} className="rounded-lg border overflow-hidden flex flex-col hover:bg-accent hover:border-primary cursor-pointer transition-colors">
+                                    <div className="aspect-square w-full flex items-center justify-center">
+                                        <Folder className="h-16 w-16 text-primary" />
+                                    </div>
+                                    <div className="p-2 border-t text-center">
+                                        <p className="font-medium text-sm truncate" title={folder.name}>{folder.name}</p>
+                                    </div>
                                 </div>
                             ))}
                             {files.map(file => (
-                                <div key={file.id} className="flex items-center p-3 rounded-lg border hover:bg-accent">
-                                    <File className="mr-3 h-6 w-6 text-muted-foreground" />
-                                    <div className="truncate flex-1">
-                                        <p className="font-medium text-sm truncate">{file.name}</p>
+                                <div key={file.id} className="rounded-lg border overflow-hidden flex flex-col hover:bg-accent transition-colors">
+                                    <div className="aspect-square w-full bg-secondary flex items-center justify-center">
+                                        {file.type.startsWith('image/') ? (
+                                            <img src={file.data} alt={file.name} className="w-full h-full object-cover" />
+                                        ) : (
+                                            <File className="h-16 w-16 text-muted-foreground" />
+                                        )}
+                                    </div>
+                                    <div className="p-2 border-t">
+                                        <p className="font-medium text-sm truncate" title={file.name}>{file.name}</p>
                                         <p className="text-xs text-muted-foreground">{ (file.size / 1024).toFixed(1) } KB</p>
                                     </div>
                                 </div>
