@@ -83,8 +83,17 @@ export const ProjectFilesList = ({ projectId }: ProjectFilesListProps) => {
     });
   };
 
-  const getFileIcon = (fileType: string) => {
-    return <FileText className="h-4 w-4" />;
+  const getFileIcon = (file: { type: string; data: string; name: string }) => {
+    if (file.type.startsWith('image/')) {
+      return (
+        <img
+          src={file.data}
+          alt={file.name}
+          className="h-10 w-10 rounded-md object-cover flex-shrink-0"
+        />
+      );
+    }
+    return <FileText className="h-8 w-8 text-muted-foreground flex-shrink-0" />;
   };
 
   const getFileTypeColor = (fileType: string) => {
@@ -138,8 +147,8 @@ export const ProjectFilesList = ({ projectId }: ProjectFilesListProps) => {
           <div className="space-y-3">
             {filteredFiles.map((file: any) => (
               <div key={file.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                <div className="flex items-center space-x-3 overflow-hidden">
-                  {getFileIcon(file.type)}
+                <div className="flex items-center space-x-4 overflow-hidden">
+                  {getFileIcon(file)}
                   <div className="overflow-hidden">
                     <div className="font-medium truncate">{file.name}</div>
                     <div className="text-sm text-muted-foreground">
