@@ -1,15 +1,22 @@
-
 import { useState, useEffect } from 'react';
-import { Task, TaskPriority, TaskStatus, useApp } from '@/context/AppContext';
+import { Task, useApp } from '@/context/AppContext';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogDescription,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -19,34 +26,31 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { CalendarIcon, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
-import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-const formSchema = z.object({
+const taskSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  description: z.string().min(1, 'Description is required'),
-  status: z.enum(['todo', 'inProcess', 'completed']),
+  description: z.string(),
   priority: z.enum(['low', 'medium', 'high']),
+  status: z.enum(['todo', 'inProcess', 'completed']),
+  dueDate: z.string().optional(),
   assignedTo: z.array(z.string()),
   projectId: z.string().optional(),
-  dueDate: z.date().optional(),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type TaskFormData = z.infer<typeof taskSchema>;
 
 interface TaskDialogProps {
   open: boolean;
@@ -55,142 +59,93 @@ interface TaskDialogProps {
   defaultProjectId?: string;
 }
 
-export const TaskDialog = ({ 
-  open, 
-  onOpenChange, 
-  initialTask, 
-  defaultProjectId 
+export const TaskDialog = ({
+  open,
+  onOpenChange,
+  initialTask,
+  defaultProjectId = '',
 }: TaskDialogProps) => {
-  const { addTask, updateTask, teamMembers, projects, updateProject } = useApp();
-  const [selectedTeamMembers, setSelectedTeamMembers] = useState<string[]>([]);
-  const [selectedProjectId, setSelectedProjectId] = useState<string | undefined>(undefined);
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+  const navigate = useNavigate();
+  const { projects, teamMembers, addTask, updateTask } = useApp();
+  const [selectedProject, setSelectedProject] = useState<string>('');
+
+  const form = useForm<TaskFormData>({
+    resolver: zodResolver(taskSchema),
     defaultValues: {
       title: '',
       description: '',
-      status: 'todo' as TaskStatus,
-      priority: 'medium' as TaskPriority,
+      priority: 'medium',
+      status: 'todo',
+      dueDate: '',
       assignedTo: [],
-      projectId: undefined,
-      dueDate: undefined,
+      projectId: defaultProjectId,
     },
   });
 
-  // Reset form when dialog opens/closes or initialTask changes
   useEffect(() => {
-    if (open) {
-      if (initialTask) {
-        // Find which project this task belongs to
-        const projectWithTask = projects.find(p => p.tasks.includes(initialTask.id));
-        
-        form.reset({
-          title: initialTask.title,
-          description: initialTask.description,
-          status: initialTask.status,
-          priority: initialTask.priority,
-          assignedTo: initialTask.assignedTo,
-          projectId: projectWithTask?.id,
-          dueDate: initialTask.dueDate ? new Date(initialTask.dueDate) : undefined,
-        });
-        setSelectedTeamMembers(initialTask.assignedTo);
-        setSelectedProjectId(projectWithTask?.id);
-      } else {
-        form.reset({
-          title: '',
-          description: '',
-          status: 'todo',
-          priority: 'medium',
-          assignedTo: [],
-          projectId: defaultProjectId,
-          dueDate: undefined,
-        });
-        setSelectedTeamMembers([]);
-        setSelectedProjectId(defaultProjectId);
-      }
-    }
-  }, [open, initialTask, form, projects, defaultProjectId]);
-
-  const onSubmit = (values: FormValues) => {
-    // Handle task creation or update
     if (initialTask) {
-      // Before updating the task, remove it from any project it was in
-      const oldProjectWithTask = projects.find(p => p.tasks.includes(initialTask.id));
-      if (oldProjectWithTask && oldProjectWithTask.id !== values.projectId) {
-        const updatedTasks = oldProjectWithTask.tasks.filter(id => id !== initialTask.id);
-        updateProject({
-          ...oldProjectWithTask,
-          tasks: updatedTasks
-        });
-      }
-      
-      // Update task
+      form.reset({
+        title: initialTask.title,
+        description: initialTask.description,
+        priority: initialTask.priority,
+        status: initialTask.status,
+        dueDate: initialTask.dueDate || '',
+        assignedTo: initialTask.assignedTo,
+        projectId: initialTask.projectId || '',
+      });
+      setSelectedProject(initialTask.projectId || '');
+    } else {
+      form.reset({
+        title: '',
+        description: '',
+        priority: 'medium',
+        status: 'todo',
+        dueDate: '',
+        assignedTo: [],
+        projectId: defaultProjectId,
+      });
+      setSelectedProject(defaultProjectId);
+    }
+  }, [initialTask, form, defaultProjectId]);
+
+  const onSubmit = (data: TaskFormData) => {
+    if (initialTask) {
       updateTask({
         ...initialTask,
-        title: values.title,
-        description: values.description,
-        status: values.status,
-        priority: values.priority,
-        assignedTo: selectedTeamMembers,
-        dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
+        ...data,
+        dueDate: data.dueDate || null,
       });
-      
-      // Add task to new project if selected
-      if (values.projectId && (!oldProjectWithTask || oldProjectWithTask.id !== values.projectId)) {
-        const projectToUpdate = projects.find(p => p.id === values.projectId);
-        if (projectToUpdate && !projectToUpdate.tasks.includes(initialTask.id)) {
-          updateProject({
-            ...projectToUpdate,
-            tasks: [...projectToUpdate.tasks, initialTask.id]
-          });
-        }
-      }
     } else {
-      // Create new task
-      const newTask = addTask({
-        title: values.title,
-        description: values.description,
-        status: values.status,
-        priority: values.priority,
-        assignedTo: selectedTeamMembers,
-        dueDate: values.dueDate ? values.dueDate.toISOString() : undefined,
+      addTask({
+        ...data,
+        dueDate: data.dueDate || null,
       });
-      
-      // Add task to project if selected
-      if (values.projectId && newTask) {
-        const projectToUpdate = projects.find(p => p.id === values.projectId);
-        if (projectToUpdate) {
-          updateProject({
-            ...projectToUpdate,
-            tasks: [...projectToUpdate.tasks, newTask.id]
-          });
-        }
-      }
     }
     onOpenChange(false);
   };
 
-  const toggleTeamMember = (memberId: string) => {
-    setSelectedTeamMembers((prev) =>
-      prev.includes(memberId)
-        ? prev.filter((id) => id !== memberId)
-        : [...prev, memberId]
-    );
+  const handleProjectClick = (projectId: string) => {
+    onOpenChange(false);
+    navigate(`/project/${projectId}`);
   };
+
+  const selectedProjectData = projects.find(p => p.id === selectedProject);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {initialTask ? 'Edit Task' : 'Add New Task'}
+            {initialTask ? 'Edit Task' : 'Create New Task'}
           </DialogTitle>
           <DialogDescription>
-            {initialTask ? 'Update task details' : 'Create a new task and assign it to a project'}
+            {initialTask 
+              ? 'Update the task details below.' 
+              : 'Fill in the details to create a new task.'
+            }
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -206,7 +161,7 @@ export const TaskDialog = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="description"
@@ -214,106 +169,63 @@ export const TaskDialog = ({
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Task description" 
-                      className="resize-none h-20"
-                      {...field} 
+                    <Textarea
+                      placeholder="Task description"
+                      className="resize-none"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="todo">To Do</SelectItem>
-                        <SelectItem value="inProcess">In Process</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Priority</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                      value={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            {/* Project selection field */}
+
             <FormField
               control={form.control}
-              name="projectId"
+              name="priority"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Project</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      setSelectedProjectId(value);
-                    }}
-                    value={field.value || "none"}
-                  >
+                  <FormLabel>Priority</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select project (optional)" />
+                        <SelectValue placeholder="Select a priority" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="none">No Project</SelectItem>
-                      {projects.map((project) => (
-                        <SelectItem key={project.id} value={project.id}>
-                          {project.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="todo">To Do</SelectItem>
+                      <SelectItem value="inProcess">In Process</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="dueDate"
@@ -324,14 +236,14 @@ export const TaskDialog = ({
                     <PopoverTrigger asChild>
                       <FormControl>
                         <Button
-                          variant={"outline"}
+                          variant={'outline'}
                           className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
+                            'w-[240px] pl-3 text-left font-normal',
+                            !field.value && 'text-muted-foreground'
                           )}
                         >
                           {field.value ? (
-                            format(field.value, "PPP")
+                            format(new Date(field.value), 'MMM d, yyyy')
                           ) : (
                             <span>Pick a date</span>
                           )}
@@ -342,10 +254,16 @@ export const TaskDialog = ({
                     <PopoverContent className="w-auto p-0" align="start">
                       <Calendar
                         mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
+                        selected={field.value ? new Date(field.value) : undefined}
+                        onSelect={(date) => {
+                          if (date) {
+                            field.onChange(format(date, 'yyyy-MM-dd'));
+                          }
+                        }}
+                        disabled={(date) =>
+                          date < new Date()
+                        }
                         initialFocus
-                        className="pointer-events-auto"
                       />
                     </PopoverContent>
                   </Popover>
@@ -354,29 +272,77 @@ export const TaskDialog = ({
               )}
             />
             
-            <div>
-              <FormLabel>Assigned To</FormLabel>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {teamMembers.map((member) => (
-                  <Button
-                    key={member.id}
-                    type="button"
-                    variant={selectedTeamMembers.includes(member.id) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => toggleTeamMember(member.id)}
-                    className="transition-all duration-200"
-                  >
-                    {member.name}
-                  </Button>
-                ))}
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button type="submit" className="w-full sm:w-auto">
+            <FormField
+              control={form.control}
+              name="projectId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Project</FormLabel>
+                  <div className="space-y-2">
+                    <Select 
+                      value={field.value} 
+                      onValueChange={(value) => {
+                        field.onChange(value);
+                        setSelectedProject(value);
+                      }}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a project" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="">No Project</SelectItem>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            {project.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    
+                    {selectedProjectData && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleProjectClick(selectedProject)}
+                        className="w-full"
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Go to {selectedProjectData.name}
+                      </Button>
+                    )}
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="assignedTo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assign to</FormLabel>
+                  <MultiSelect
+                    options={teamMembers.map((member) => ({
+                      label: member.name,
+                      value: member.id,
+                    }))}
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="flex justify-end">
+              <Button type="submit">
                 {initialTask ? 'Update Task' : 'Create Task'}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         </Form>
       </DialogContent>
