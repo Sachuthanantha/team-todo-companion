@@ -140,7 +140,7 @@ const ProjectDetails = () => {
       <Tabs defaultValue="tasks" className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="files">Files & Documentation</TabsTrigger>
+          <TabsTrigger value="files">Files</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
         

@@ -1,5 +1,4 @@
 
-import { ProjectFileUpload } from './ProjectFileUpload';
 import { ProjectFilesList } from './ProjectFilesList';
 
 interface ProjectFilesSectionProps {
@@ -8,8 +7,7 @@ interface ProjectFilesSectionProps {
 
 export const ProjectFilesSection = ({ projectId }: ProjectFilesSectionProps) => {
   return (
-    <div className="space-y-6">
-      <ProjectFileUpload projectId={projectId} />
+    <div>
       <ProjectFilesList projectId={projectId} />
     </div>
   );
