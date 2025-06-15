@@ -4,7 +4,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Edit, Calendar, User } from 'lucide-react';
+import { Edit, Calendar, User, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 
@@ -43,6 +43,11 @@ export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
     } else {
       return <Badge variant="default">In Progress</Badge>;
     }
+  };
+
+  const handleOpenInNewWindow = () => {
+    const url = `/project/${project.id}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -105,12 +110,15 @@ export const ProjectCard = ({ project, onEdit }: ProjectCardProps) => {
           )}
         </div>
       </CardContent>
-      <CardFooter className="border-t pt-3">
-        <Link to={`/project/${project.id}`} className="w-full">
+      <CardFooter className="border-t pt-3 space-x-2">
+        <Link to={`/project/${project.id}`} className="flex-1">
           <Button variant="outline" className="w-full">
             View Details
           </Button>
         </Link>
+        <Button variant="default" onClick={handleOpenInNewWindow} className="px-3">
+          <ExternalLink className="h-4 w-4" />
+        </Button>
       </CardFooter>
     </Card>
   );

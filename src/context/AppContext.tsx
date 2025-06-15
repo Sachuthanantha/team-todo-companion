@@ -32,12 +32,13 @@ export interface TeamMember {
 export interface Project {
   id: string;
   name: string;
-  description: string;
-  tasks: string[];
+  description?: string;
   members?: string[];
+  clients?: string[];
   startDate?: string;
   deadline?: string;
-  clients?: string[];
+  tasks: string[];
+  files?: ProjectFile[];
 }
 
 export interface Client {
@@ -116,6 +117,15 @@ export interface Conversation {
   meetings?: string[];
 }
 
+export interface ProjectFile {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  uploadDate: string;
+  data: string;
+}
+
 interface AppContextType {
   // Sidebar state
   sidebarOpen: boolean;
@@ -145,6 +155,8 @@ interface AppContextType {
   addProject: (project: Omit<Project, 'id'>) => void;
   updateProject: (project: Project) => void;
   deleteProject: (id: string) => void;
+  addProjectFile: (projectId: string, file: ProjectFile) => void;
+  removeProjectFile: (projectId: string, fileId: string) => void;
   
   // Clients
   clients: Client[];
@@ -603,6 +615,30 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
     showSuccessToast('Project deleted successfully');
   };
 
+  const addProjectFile = (projectId: string, file: ProjectFile) => {
+    setProjects(prev => prev.map(project => {
+      if (project.id === projectId) {
+        return {
+          ...project,
+          files: [...(project.files || []), file]
+        };
+      }
+      return project;
+    }));
+  };
+
+  const removeProjectFile = (projectId: string, fileId: string) => {
+    setProjects(prev => prev.map(project => {
+      if (project.id === projectId) {
+        return {
+          ...project,
+          files: project.files?.filter(file => file.id !== fileId) || []
+        };
+      }
+      return project;
+    }));
+  };
+
   // Client methods
   const addClient = (client: Omit<Client, 'id'>) => {
     const newClient: Client = {
@@ -950,6 +986,8 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
       addProject,
       updateProject,
       deleteProject,
+      addProjectFile,
+      removeProjectFile,
       clients,
       addClient,
       updateClient,

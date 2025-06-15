@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Project, Task, TeamMember, useApp } from '@/context/AppContext';
 import { Briefcase, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TaskDialog } from '@/components/tasks/TaskDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { ProjectDialog } from '@/components/projects/ProjectDialog';
@@ -11,6 +11,7 @@ import { ProjectHeader } from '@/components/projects/details/ProjectHeader';
 import { ProjectStats } from '@/components/projects/details/ProjectStats';
 import { ProjectInfoCards } from '@/components/projects/details/ProjectInfoCards';
 import { ProjectTasksSection } from '@/components/projects/details/ProjectTasksSection';
+import { ProjectFilesSection } from '@/components/projects/files/ProjectFilesSection';
 
 const ProjectDetails = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -134,13 +135,26 @@ const ProjectDetails = () => {
         projectClients={projectClients}
       />
       
-      <ProjectTasksSection 
-        filteredTasks={filteredTasks}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        onAddTask={handleAddTask}
-        onEditTask={handleEditTask}
-      />
+      <Tabs defaultValue="tasks" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="files">Files & Documentation</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="tasks" className="space-y-6">
+          <ProjectTasksSection 
+            filteredTasks={filteredTasks}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            onAddTask={handleAddTask}
+            onEditTask={handleEditTask}
+          />
+        </TabsContent>
+        
+        <TabsContent value="files" className="space-y-6">
+          <ProjectFilesSection projectId={project.id} />
+        </TabsContent>
+      </Tabs>
       
       {/* Task Dialog */}
       <TaskDialog
