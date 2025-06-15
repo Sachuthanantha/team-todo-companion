@@ -12,6 +12,7 @@ interface NoteCardProps {
   date: string;
   tags?: string[];
   attachments?: number;
+  onClick?: () => void;
 }
 
 export const NoteCard = ({ 
@@ -20,12 +21,17 @@ export const NoteCard = ({
   content, 
   date,
   tags = [],
-  attachments = 0
+  attachments = 0,
+  onClick,
 }: NoteCardProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/notes/${id}`);
+    if (onClick) {
+      onClick();
+    } else {
+      navigate(`/notes/${id}`);
+    }
   };
 
   return (

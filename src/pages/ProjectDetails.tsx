@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Project, Task, TeamMember, useApp } from '@/context/AppContext';
@@ -12,6 +13,7 @@ import { ProjectStats } from '@/components/projects/details/ProjectStats';
 import { ProjectInfoCards } from '@/components/projects/details/ProjectInfoCards';
 import { ProjectTasksSection } from '@/components/projects/details/ProjectTasksSection';
 import { ProjectFilesSection } from '@/components/projects/files/ProjectFilesSection';
+import { ProjectNotesSection } from '@/components/projects/notes/ProjectNotesSection';
 
 const ProjectDetails = () => {
   const { projectId } = useParams<{ projectId: string }>();
@@ -136,9 +138,10 @@ const ProjectDetails = () => {
       />
       
       <Tabs defaultValue="tasks" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="tasks">Tasks</TabsTrigger>
           <TabsTrigger value="files">Files & Documentation</TabsTrigger>
+          <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
         
         <TabsContent value="tasks" className="space-y-6">
@@ -153,6 +156,10 @@ const ProjectDetails = () => {
         
         <TabsContent value="files" className="space-y-6">
           <ProjectFilesSection projectId={project.id} />
+        </TabsContent>
+
+        <TabsContent value="notes" className="space-y-6">
+          <ProjectNotesSection projectId={project.id} />
         </TabsContent>
       </Tabs>
       
